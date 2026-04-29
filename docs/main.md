@@ -6,6 +6,7 @@ Start here when changing the app. These notes describe the current shape of the 
 
 - [Architecture](subdocument/ARCHITECTURE.md): high-level component ownership and data flow.
 - [User Action Sequence Diagram](subdocument/USER_ACTION_SEQUENCE.md): sequence-level behavior for every current user action.
+- [Sequence Participants](subdocument/participants): responsibility notes for each participant in the user action sequence diagram.
 
 ## Codex Maintenance Notes
 
@@ -13,6 +14,7 @@ Use these docs as working context before adjusting the code:
 
 - Check [Architecture](subdocument/ARCHITECTURE.md) before changing ownership between `ContentView`, `MetronomeModel`, `ClickEngine`, persistence, or timing.
 - Check [User Action Sequence Diagram](subdocument/USER_ACTION_SEQUENCE.md) before changing play/pause, BPM changes, tap tempo, measure entry, add measure, or delete measure behavior.
+- Check [Sequence Participants](subdocument/participants) before changing a participant's responsibilities.
 - Update the diagrams in the same change when adding, removing, or rerouting a user action.
 - Keep `MetronomeModel` as the source of truth for playback state, timing, sequence state, tap tempo, and persistence unless the architecture is intentionally changed.
 - Keep `ClickEngine` focused on audio setup and click playback.

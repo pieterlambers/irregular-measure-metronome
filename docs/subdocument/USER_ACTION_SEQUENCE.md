@@ -1,5 +1,14 @@
 # User Action Sequence Diagram
 
+## Participants
+
+- [User](participants/user.md)
+- [ContentView](participants/contentview.md)
+- [MetronomeModel](participants/metronomemodel.md)
+- [ClickEngine](participants/clickengine.md)
+- [UserDefaults](participants/userdefaults.md)
+- [Task.sleep](participants/tasksleep.md)
+
 ```mermaid
 sequenceDiagram
     actor User
