@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-struct TimeSignature: Identifiable, Codable, Equatable {
+struct TimeSignature: Identifiable, Codable, Equatable, Sendable {
     var id = UUID()
     var numerator: Int
     var denominator: Int
@@ -20,7 +20,7 @@ final class MetronomeModel: ObservableObject {
                 bpm = clamped
             }
             if isPlaying {
-                rescheduleUpcomingTick()
+                restartPlaybackFromCurrentPosition()
             }
         }
     }
@@ -45,12 +45,10 @@ final class MetronomeModel: ObservableObject {
 
     private let storageKey = "metro.sequence.v1"
     private let clickEngine = ClickEngine()
-    private var nextTickTask: Task<Void, Never>?
     private var flashTask: Task<Void, Never>?
     private var tapResetTask: Task<Void, Never>?
     private var tapTimes: [Date] = []
-    private var pendingMeasureIndex = 0
-    private var pendingBeat = 0
+    private var playbackGeneration = 0
 
     private static let defaultSequence = [
         TimeSignature(numerator: 7, denominator: 8),
@@ -95,21 +93,18 @@ final class MetronomeModel: ObservableObject {
 
     func start() {
         guard !sequence.isEmpty else { return }
-        clickEngine.prepare()
         isPlaying = true
-        currentBeat = 0
+        currentBeat = -1
         currentMeasureIndex = 0
-        pendingBeat = 0
-        pendingMeasureIndex = 0
         loopCount = 1
-        pendulumDirection = 1
-        tick()
+        pendulumDirection = 0
+        startPlayback(measureIndex: 0, beat: 0, loopCount: 1)
     }
 
     func stop() {
         isPlaying = false
-        nextTickTask?.cancel()
-        nextTickTask = nil
+        playbackGeneration += 1
+        clickEngine.stop()
         flashTask?.cancel()
         flashBPM = false
         currentBeat = -1
@@ -163,28 +158,42 @@ final class MetronomeModel: ObservableObject {
         }
     }
 
-    private func tick() {
-        guard isPlaying, !sequence.isEmpty else { return }
-        let measure = currentMeasure
-        let beatForClick = currentBeat
-        let delay = intervalMilliseconds(for: measure)
-
-        clickEngine.playClick(accented: beatForClick == 0)
-        flash()
-        pendulumDirection *= -1
-
-        pendingBeat = currentBeat + 1
-        pendingMeasureIndex = currentMeasureIndex
-        if pendingBeat >= measure.numerator {
-            pendingBeat = 0
-            pendingMeasureIndex += 1
-            if pendingMeasureIndex >= sequence.count {
-                pendingMeasureIndex = 0
-                loopCount += 1
+    private func startPlayback(measureIndex: Int, beat: Int, loopCount: Int) {
+        playbackGeneration += 1
+        let generation = playbackGeneration
+        clickEngine.start(
+            bpm: bpm,
+            sequence: sequence,
+            startMeasureIndex: measureIndex,
+            startBeat: beat,
+            loopCount: loopCount
+        ) { [weak self] measureIndex, beat, loopCount in
+            Task { @MainActor [weak self] in
+                self?.showScheduledBeat(
+                    measureIndex: measureIndex,
+                    beat: beat,
+                    loopCount: loopCount,
+                    generation: generation
+                )
             }
         }
+    }
 
-        rescheduleUpcomingTick(after: delay)
+    private func restartPlaybackFromCurrentPosition() {
+        let beat = max(0, currentBeat)
+        startPlayback(measureIndex: currentMeasureIndex, beat: beat, loopCount: loopCount)
+    }
+
+    private func showScheduledBeat(measureIndex: Int, beat: Int, loopCount: Int, generation: Int) {
+        guard isPlaying,
+              generation == playbackGeneration,
+              sequence.indices.contains(measureIndex)
+        else { return }
+        currentMeasureIndex = measureIndex
+        currentBeat = beat
+        self.loopCount = loopCount
+        flash()
+        pendulumDirection = pendulumDirection == 0 ? 1 : -pendulumDirection
     }
 
     private func flash() {
@@ -197,40 +206,6 @@ final class MetronomeModel: ObservableObject {
                 self?.flashBPM = false
             }
         }
-    }
-
-    private func scheduleNextTick(
-        after milliseconds: Double,
-        action: (() -> Void)? = nil
-    ) {
-        nextTickTask?.cancel()
-        guard isPlaying else { return }
-
-        nextTickTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(Int(milliseconds.rounded())))
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                if let action {
-                    action()
-                } else {
-                    self?.tick()
-                }
-            }
-        }
-    }
-
-    private func rescheduleUpcomingTick(after milliseconds: Double? = nil) {
-        scheduleNextTick(after: milliseconds ?? intervalMilliseconds()) { [weak self] in
-            guard let self else { return }
-            self.currentBeat = self.pendingBeat
-            self.currentMeasureIndex = self.pendingMeasureIndex
-            self.tick()
-        }
-    }
-
-    private func intervalMilliseconds(for measure: TimeSignature? = nil) -> Double {
-        let measure = measure ?? currentMeasure
-        return (60000 / Double(bpm)) * (4 / Double(measure.denominator))
     }
 
     private func saveSequence() {
