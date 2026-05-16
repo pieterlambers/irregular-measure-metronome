@@ -95,6 +95,15 @@ sequenceDiagram
     end
 
     rect rgb(35, 35, 40)
+        Note over User,Defaults: Change First Measure Number
+        User->>View: Adjust first measure stepper
+        View->>Model: startMeasureNumber = new value
+        Model->>Model: clamp startMeasureNumber to 0...9999
+        Model->>Defaults: save encoded composition
+        Model-->>View: publish consecutive displayed measure numbers
+    end
+
+    rect rgb(35, 35, 40)
         Note over User,Defaults: Edit Measure Fields and Add Measure
         User->>View: Type numerator
         View->>View: update numeratorText
@@ -108,7 +117,31 @@ sequenceDiagram
         else Inputs are valid
             View->>Model: addMeasure(numerator, denominator)
             Model->>Model: append TimeSignature
-            Model->>Defaults: save encoded sequence
+            Model->>Defaults: save encoded composition
+            alt Playback is running
+                Model->>Model: stop()
+                Model->>Engine: stop buffered scheduling
+                Model->>Timer: cancel flashTask
+            end
+            Model-->>View: publish updated sequence
+        end
+    end
+
+    rect rgb(35, 35, 40)
+        Note over User,Defaults: Insert Measure
+        User->>View: Type numerator
+        View->>View: update numeratorText
+        User->>View: Type denominator
+        View->>View: update denominatorText
+        User->>View: Tap insert button on a sequence row
+        View->>View: validate numerator 1...32 and denominator 1...64
+        alt Inputs are invalid
+            View->>View: mark invalid fields
+        else Inputs are valid
+            View->>Model: insertMeasure(after, numerator, denominator)
+            Model->>Model: insert TimeSignature after selected row
+            Model->>Defaults: save encoded composition
+            Model->>Model: derive consecutive measure numbers from startMeasureNumber
             alt Playback is running
                 Model->>Model: stop()
                 Model->>Engine: stop buffered scheduling
@@ -126,7 +159,8 @@ sequenceDiagram
         else More than one measure remains
             View->>Model: deleteMeasure(measure)
             Model->>Model: remove matching TimeSignature
-            Model->>Defaults: save encoded sequence
+            Model->>Defaults: save encoded composition
+            Model->>Model: derive consecutive measure numbers from startMeasureNumber
             alt Playback is running
                 Model->>Model: stop()
                 Model->>Engine: stop buffered scheduling

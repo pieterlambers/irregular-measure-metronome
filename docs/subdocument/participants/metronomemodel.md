@@ -3,7 +3,7 @@
 ## Responsibilities
 
 - Acts as the source of truth for metronome state.
-- Publishes UI state including `bpm`, `isPlaying`, `currentBeat`, `currentMeasureIndex`, `loopCount`, `sequence`, `tapTempoText`, `flashBPM`, and `pendulumDirection`.
+- Publishes UI state including `bpm`, `isPlaying`, `currentBeat`, `currentMeasureIndex`, `loopCount`, `sequence`, `startMeasureNumber`, `tapTempoText`, `flashBPM`, and `pendulumDirection`.
 - Starts playback by resetting published playback counters and asking `ClickEngine` to start buffered scheduling.
 - Stops playback by incrementing `playbackGeneration`, stopping `ClickEngine`, cancelling flash timing, and resetting transient playback indicators.
 - Receives scheduled beat callbacks from `ClickEngine`.
@@ -11,9 +11,11 @@
 - Publishes the current beat, measure, loop count, flash state, and pendulum direction in response to current beat callbacks.
 - Restarts buffered playback from the current position when BPM changes during playback.
 - Manages tap tempo timing, averaging, BPM clamping, and tap reset behavior.
-- Adds and deletes measures while keeping sequence state valid.
-- Saves and loads the measure sequence through `UserDefaults`.
-- Sanitizes persisted sequence data and falls back to the default sequence when needed.
+- Derives displayed measure numbers from `startMeasureNumber + sequence index`.
+- Adds, inserts, and deletes measures while keeping sequence state valid and measure numbers consecutive.
+- Saves and loads the composition through `UserDefaults`.
+- Migrates legacy persisted measure sequences into the current composition format.
+- Sanitizes persisted composition data and falls back to the default sequence when needed.
 
 ## Future Change Notes
 

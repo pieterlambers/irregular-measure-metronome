@@ -23,6 +23,7 @@ struct ContentView: View {
                 pendulum
                 controls
                 sequenceHeader
+                measureNumberControls
                 sequenceList
                 addMeasure
                 loopIndicator
@@ -190,14 +191,39 @@ struct ContentView: View {
             .padding(.bottom, 8)
     }
 
+    private var measureNumberControls: some View {
+        Stepper(value: $metronome.startMeasureNumber, in: 0...9999) {
+            HStack(spacing: 8) {
+                Text("first measure")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .tracking(1.1)
+                    .foregroundStyle(muted)
+                    .textCase(.uppercase)
+
+                Text("\(metronome.startMeasureNumber)")
+                    .font(.system(size: 14, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+            }
+        }
+        .tint(accent)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(surface, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1))
+        .padding(.horizontal, 24)
+        .padding(.bottom, 8)
+    }
+
     private var sequenceList: some View {
         VStack(spacing: 8) {
             ForEach(Array(metronome.sequence.enumerated()), id: \.element.id) { index, measure in
                 HStack(spacing: 10) {
-                    Text("\(index + 1)")
+                    Text("\(metronome.measureNumber(forIndex: index))")
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(muted)
-                        .frame(width: 18, alignment: .leading)
+                        .monospacedDigit()
+                        .frame(width: 36, alignment: .leading)
 
                     Text(measure.label)
                         .font(.system(size: 24, weight: .medium, design: .monospaced))
@@ -213,6 +239,17 @@ struct ContentView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Button {
+                        insertMeasureAfter(measure)
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(accent)
+                            .frame(width: 32, height: 32)
+                    }
+                    .buttonStyle(.plain)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(border, lineWidth: 1))
 
                     Button {
                         metronome.deleteMeasure(measure)
@@ -299,13 +336,27 @@ struct ContentView: View {
     }
 
     private func addMeasureFromFields() {
+        guard let values = validatedMeasureFields() else { return }
+        _ = metronome.addMeasure(numerator: values.numerator, denominator: values.denominator)
+    }
+
+    private func insertMeasureAfter(_ measure: TimeSignature) {
+        guard let values = validatedMeasureFields() else { return }
+        _ = metronome.insertMeasure(
+            after: measure,
+            numerator: values.numerator,
+            denominator: values.denominator
+        )
+    }
+
+    private func validatedMeasureFields() -> (numerator: Int, denominator: Int)? {
         let numerator = Int(numeratorText) ?? 0
         let denominator = Int(denominatorText) ?? 0
         invalidNumerator = !(1...32).contains(numerator)
         invalidDenominator = !(1...64).contains(denominator)
 
-        guard !invalidNumerator, !invalidDenominator else { return }
-        _ = metronome.addMeasure(numerator: numerator, denominator: denominator)
+        guard !invalidNumerator, !invalidDenominator else { return nil }
+        return (numerator, denominator)
     }
 
     private func dotFill(for beat: Int) -> Color {

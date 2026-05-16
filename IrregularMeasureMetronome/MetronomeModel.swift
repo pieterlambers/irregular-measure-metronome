@@ -13,6 +13,17 @@ struct TimeSignature: Identifiable, Codable, Equatable, Sendable {
 
 @MainActor
 final class MetronomeModel: ObservableObject {
+    @Published var startMeasureNumber: Int = 1 {
+        didSet {
+            let clamped = startMeasureNumber.clamped(to: 0...9999)
+            if startMeasureNumber != clamped {
+                startMeasureNumber = clamped
+                return
+            }
+            saveComposition()
+        }
+    }
+
     @Published var bpm: Int = 120 {
         didSet {
             let clamped = min(300, max(20, bpm))
@@ -31,7 +42,7 @@ final class MetronomeModel: ObservableObject {
     @Published private(set) var loopCount = 1
     @Published var sequence: [TimeSignature] {
         didSet {
-            saveSequence()
+            saveComposition()
             if currentMeasureIndex >= sequence.count {
                 currentMeasureIndex = 0
                 currentBeat = -1
@@ -43,7 +54,8 @@ final class MetronomeModel: ObservableObject {
     @Published private(set) var flashBPM = false
     @Published private(set) var pendulumDirection = 0
 
-    private let storageKey = "metro.sequence.v1"
+    private let compositionStorageKey = "metro.composition.v2"
+    private let legacySequenceStorageKey = "metro.sequence.v1"
     private let clickEngine = ClickEngine()
     private var flashTask: Task<Void, Never>?
     private var tapResetTask: Task<Void, Never>?
@@ -57,7 +69,12 @@ final class MetronomeModel: ObservableObject {
     ]
 
     init() {
-        sequence = Self.loadSequence(storageKey: storageKey)
+        let composition = Self.loadComposition(
+            compositionStorageKey: compositionStorageKey,
+            legacySequenceStorageKey: legacySequenceStorageKey
+        )
+        startMeasureNumber = composition.startMeasureNumber
+        sequence = composition.sequence
     }
 
     var tempoName: String {
@@ -85,6 +102,10 @@ final class MetronomeModel: ObservableObject {
             return TimeSignature(numerator: 4, denominator: 4)
         }
         return sequence[currentMeasureIndex]
+    }
+
+    func measureNumber(forIndex index: Int) -> Int {
+        startMeasureNumber + index
     }
 
     func togglePlayback() {
@@ -139,11 +160,23 @@ final class MetronomeModel: ObservableObject {
     }
 
     func addMeasure(numerator: Int, denominator: Int) -> Bool {
+        insertMeasure(at: sequence.count, numerator: numerator, denominator: denominator)
+    }
+
+    func insertMeasure(after measure: TimeSignature, numerator: Int, denominator: Int) -> Bool {
+        guard let index = sequence.firstIndex(where: { $0.id == measure.id }) else {
+            return false
+        }
+        return insertMeasure(at: index + 1, numerator: numerator, denominator: denominator)
+    }
+
+    func insertMeasure(at index: Int, numerator: Int, denominator: Int) -> Bool {
         guard (1...32).contains(numerator), (1...64).contains(denominator) else {
             return false
         }
 
-        sequence.append(TimeSignature(numerator: numerator, denominator: denominator))
+        let insertionIndex = index.clamped(to: 0...sequence.count)
+        sequence.insert(TimeSignature(numerator: numerator, denominator: denominator), at: insertionIndex)
         if isPlaying {
             stop()
         }
@@ -208,27 +241,53 @@ final class MetronomeModel: ObservableObject {
         }
     }
 
-    private func saveSequence() {
+    private func saveComposition() {
         do {
-            let data = try JSONEncoder().encode(sequence)
-            UserDefaults.standard.set(data, forKey: storageKey)
+            let composition = PersistedComposition(
+                startMeasureNumber: startMeasureNumber,
+                sequence: sequence
+            )
+            let data = try JSONEncoder().encode(composition)
+            UserDefaults.standard.set(data, forKey: compositionStorageKey)
         } catch {
-            UserDefaults.standard.removeObject(forKey: storageKey)
+            UserDefaults.standard.removeObject(forKey: compositionStorageKey)
         }
     }
 
-    private static func loadSequence(storageKey: String) -> [TimeSignature] {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
-              let decoded = try? JSONDecoder().decode([TimeSignature].self, from: data)
-        else {
-            return defaultSequence
+    private static func loadComposition(
+        compositionStorageKey: String,
+        legacySequenceStorageKey: String
+    ) -> PersistedComposition {
+        if let data = UserDefaults.standard.data(forKey: compositionStorageKey),
+           let decoded = try? JSONDecoder().decode(PersistedComposition.self, from: data) {
+            return PersistedComposition(
+                startMeasureNumber: decoded.startMeasureNumber.clamped(to: 0...9999),
+                sequence: cleanSequence(decoded.sequence)
+            )
         }
 
-        let clean = decoded.filter {
+        if let data = UserDefaults.standard.data(forKey: legacySequenceStorageKey),
+           let decoded = try? JSONDecoder().decode([TimeSignature].self, from: data) {
+            return PersistedComposition(
+                startMeasureNumber: 1,
+                sequence: cleanSequence(decoded)
+            )
+        }
+
+        return PersistedComposition(startMeasureNumber: 1, sequence: defaultSequence)
+    }
+
+    private static func cleanSequence(_ sequence: [TimeSignature]) -> [TimeSignature] {
+        let clean = sequence.filter {
             (1...32).contains($0.numerator) && (1...64).contains($0.denominator)
         }
         return clean.isEmpty ? defaultSequence : clean
     }
+}
+
+private struct PersistedComposition: Codable {
+    var startMeasureNumber: Int
+    var sequence: [TimeSignature]
 }
 
 private extension Comparable {
