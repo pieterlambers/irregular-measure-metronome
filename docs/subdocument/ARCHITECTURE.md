@@ -7,6 +7,7 @@
 - [ClickEngine](./participants/clickengine.md)
 - [UserDefaults](./participants/userdefaults.md)
 - [Task.sleep](./participants/tasksleep.md)
+- [Audio Scheduling](./AUDIO_SCHEDULING.md)
 
 
 
@@ -20,8 +21,10 @@ flowchart TD
 
     B -->|"publishes UI state:<br/>bpm, isPlaying, currentBeat,<br/>currentMeasureIndex, loopCount,<br/>flashBPM, pendulumDirection,<br/>sequence, tapTempoText"| C
 
-    B -->|"uses"| D["ClickEngine"]
-    D -->|"AVAudioEngine + AVAudioPlayerNode"| E["Audio Output"]
+    B -->|"starts/stops buffered playback<br/>and receives beat callbacks"| D["ClickEngine"]
+    D -->|"AVAudioEngine + AVAudioPlayerNode<br/>queued click + silence buffers"| E["Audio Output"]
+    D -->|"scheduler queue + DispatchSourceTimer<br/>keeps audio queue filled"| K["Buffered Beat Queue"]
+    D -->|"onBeat callback on main queue"| B
 
     B -->|"stores"| F["TimeSignature[]<br/>sequence"]
     F -->|"elements are"| G["TimeSignature<br/>id, numerator, denominator, label"]
@@ -29,8 +32,8 @@ flowchart TD
     B -->|"persists sequence"| H["UserDefaults<br/>metro.sequence.v1"]
     H -->|"load on init"| B
 
-    B -->|"schedules beat loop with"| I["Task.sleep / async timing"]
-    I -->|"advances beat + measure"| B
+    B -->|"uses for UI-only delays"| I["Task.sleep / async timing"]
+    I -->|"clears BPM flash<br/>resets tap tempo text"| B
 
     C -->|"renders wrapped beat dots and sequence dots"| J["FlowLayout"]
 
@@ -39,6 +42,7 @@ flowchart TD
     click D href "./participants/clickengine.md" "Open ClickEngine responsibilities"
     click H href "./participants/userdefaults.md" "Open UserDefaults responsibilities"
     click I href "./participants/tasksleep.md" "Open Task.sleep responsibilities"
+    click K href "./AUDIO_SCHEDULING.md" "Open buffered audio scheduling notes"
 ```
 
 ## Notes
@@ -46,6 +50,7 @@ flowchart TD
 - Use the participant links above for reliable navigation. Some Markdown previews disable clickable Mermaid nodes.
 - `IrregularMeasureMetronomeApp` creates a single shared `MetronomeModel` and injects it into the SwiftUI environment.
 - `ContentView` is the only UI surface in this project and drives all user interaction, including playback controls, tap tempo, measure editing, and beat visualization.
-- `MetronomeModel` owns playback state, timing, tap tempo, sequence management, and persistence.
-- `ClickEngine` is isolated to audio generation and playback.
+- `MetronomeModel` owns published playback state, playback lifecycle, tap tempo, sequence management, persistence, and stale-callback filtering.
+- `ClickEngine` owns audio generation, buffered beat scheduling, silence-buffer caching, and audio-to-model beat callbacks.
+- `Task.sleep` is not the beat-loop scheduler; it handles short UI delays for BPM flashing and tap-tempo reset.
 - `FlowLayout` wraps the main beat dots and the compact sequence dots.
