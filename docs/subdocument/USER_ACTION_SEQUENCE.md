@@ -27,7 +27,7 @@ sequenceDiagram
         Model->>Model: start()
         Model->>Model: reset currentBeat, currentMeasureIndex, loopCount
         Model->>Model: increment playbackGeneration
-        Model->>Engine: start(bpm, sequence, position, onBeat)
+        Model->>Engine: start(bpm, sequence, position, active loop range, onBeat)
         Engine->>Engine: prepare audio engine, player, and accented/subaccented/regular click buffers
         Engine->>Queue: stop previous scheduler and create generation
         Queue->>Queue: fill buffered queue up to maxQueuedBeats
@@ -63,7 +63,7 @@ sequenceDiagram
         alt Playback is running
             Model->>Model: restartPlaybackFromCurrentPosition()
             Model->>Model: increment playbackGeneration
-            Model->>Engine: start(bpm, sequence, current position, onBeat)
+            Model->>Engine: start(bpm, sequence, current position, active loop range, onBeat)
             Engine->>Queue: replace buffered scheduler generation
             Queue->>Queue: schedule future beats with updated interval
         else Playback is stopped
@@ -101,6 +101,20 @@ sequenceDiagram
         Model->>Model: clamp startMeasureNumber to 0...9999
         Model->>Defaults: save encoded composition
         Model-->>View: publish consecutive displayed measure numbers
+    end
+
+    rect rgb(35, 35, 40)
+        Note over User,Defaults: Change Loop Range
+        User->>View: Toggle loop range or adjust from/to steppers
+        View->>Model: isLoopRangeEnabled / updateLoopStartMeasureNumber() / updateLoopEndMeasureNumber()
+        Model->>Model: map displayed measure numbers to clamped sequence indices
+        Model->>Defaults: save encoded composition
+        alt Playback is running
+            Model->>Model: restartPlaybackAtLoopStartIfNeeded()
+            Model->>Engine: start(bpm, sequence, loop start, active loop range, onBeat)
+        else Playback is stopped
+            Model-->>View: publish loop range and row highlighting
+        end
     end
 
     rect rgb(35, 35, 40)

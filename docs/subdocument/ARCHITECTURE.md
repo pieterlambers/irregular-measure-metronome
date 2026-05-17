@@ -17,16 +17,16 @@ flowchart TD
     A -->|"injects via .environmentObject"| C["ContentView<br/>SwiftUI View"]
 
     C -->|"reads state"| B
-    C -->|"user actions:<br/>play/pause, tap tempo,<br/>BPM slider, start measure,<br/>insert/delete measure,<br/>grouping picker"| B
+    C -->|"user actions:<br/>play/pause, tap tempo,<br/>BPM slider, start measure,<br/>loop range,<br/>insert/delete measure,<br/>grouping picker"| B
 
-    B -->|"publishes UI state:<br/>bpm, isPlaying, currentBeat,<br/>currentMeasureIndex, loopCount,<br/>flashBPM, pendulumDirection,<br/>sequence, startMeasureNumber,<br/>tapTempoText"| C
+    B -->|"publishes UI state:<br/>bpm, isPlaying, currentBeat,<br/>currentMeasureIndex, loopCount,<br/>flashBPM, pendulumDirection,<br/>sequence, startMeasureNumber,<br/>loop range, tapTempoText"| C
 
     B -->|"starts/stops buffered playback<br/>and receives beat callbacks"| D["ClickEngine"]
     D -->|"AVAudioEngine + AVAudioPlayerNode<br/>queued click + silence buffers"| E["Audio Output"]
     D -->|"scheduler queue + DispatchSourceTimer<br/>keeps audio queue filled"| K["Buffered Beat Queue"]
     D -->|"onBeat callback on main queue"| B
 
-    B -->|"stores"| F["TimeSignature[]<br/>sequence"]
+    B -->|"stores"| F["TimeSignature[]<br/>sequence + loop range"]
     F -->|"elements are"| G["TimeSignature<br/>id, numerator, denominator,<br/>optional grouping, label"]
     B -->|"derives display numbers from"| L["startMeasureNumber + sequence index"]
 
@@ -50,8 +50,8 @@ flowchart TD
 
 - Use the participant links above for reliable navigation. Some Markdown previews disable clickable Mermaid nodes.
 - `IrregularMeasureMetronomeApp` creates a single shared `MetronomeModel` and injects it into the SwiftUI environment.
-- `ContentView` is the only UI surface in this project and drives all user interaction, including playback controls, tap tempo, start measure number, measure editing, grouping selection, and beat visualization.
-- `MetronomeModel` owns published playback state, playback lifecycle, tap tempo, sequence management, grouping validation, consecutive measure numbering, persistence, and stale-callback filtering.
+- `ContentView` is the only UI surface in this project and drives all user interaction, including playback controls, tap tempo, start measure number, loop range selection, measure editing, grouping selection, and beat visualization.
+- `MetronomeModel` owns published playback state, playback lifecycle, tap tempo, sequence management, grouping validation, loop range mapping, consecutive measure numbering, persistence, and stale-callback filtering.
 - `ClickEngine` owns accented, subaccented, and regular audio generation, buffered beat scheduling, silence-buffer caching, and audio-to-model beat callbacks.
 - `Task.sleep` is not the beat-loop scheduler; it handles short UI delays for BPM flashing and tap-tempo reset.
 - `FlowLayout` wraps the main beat dots and the compact sequence dots.

@@ -53,6 +53,8 @@ final class ClickEngine {
         sequence: [TimeSignature],
         startMeasureIndex: Int,
         startBeat: Int,
+        loopStartIndex: Int,
+        loopEndIndex: Int,
         loopCount: Int,
         onBeat: @escaping (Int, Int, Int) -> Void
     ) {
@@ -64,11 +66,18 @@ final class ClickEngine {
             self.stopSchedulingOnQueue()
             self.scheduleGeneration += 1
             let generation = self.scheduleGeneration
+            let lastIndex = sequence.count - 1
+            let clampedLoopStart = min(max(0, loopStartIndex), lastIndex)
+            let clampedLoopEnd = min(max(0, loopEndIndex), lastIndex)
+            let activeLoopStart = min(clampedLoopStart, clampedLoopEnd)
+            let activeLoopEnd = max(clampedLoopStart, clampedLoopEnd)
             let playback = PlaybackState(
                 bpm: bpm,
                 sequence: sequence,
-                measureIndex: min(max(0, startMeasureIndex), sequence.count - 1),
+                measureIndex: min(max(activeLoopStart, startMeasureIndex), activeLoopEnd),
                 beat: max(0, startBeat),
+                loopStartIndex: activeLoopStart,
+                loopEndIndex: activeLoopEnd,
                 loopCount: max(1, loopCount),
                 onBeat: onBeat
             )
@@ -201,11 +210,14 @@ private struct PlaybackState {
     let sequence: [TimeSignature]
     var measureIndex: Int
     var beat: Int
+    let loopStartIndex: Int
+    let loopEndIndex: Int
     var loopCount: Int
     let onBeat: (Int, Int, Int) -> Void
 
     func normalized() -> PlaybackState {
         var copy = self
+        copy.measureIndex = copy.measureIndex.clamped(to: copy.loopStartIndex...copy.loopEndIndex)
         let measure = copy.sequence[copy.measureIndex]
         if copy.beat >= measure.numerator {
             copy.beat = 0
@@ -219,10 +231,16 @@ private struct PlaybackState {
         if beat >= measure.numerator {
             beat = 0
             measureIndex += 1
-            if measureIndex >= sequence.count {
-                measureIndex = 0
+            if measureIndex > loopEndIndex {
+                measureIndex = loopStartIndex
                 loopCount += 1
             }
         }
+    }
+}
+
+private extension Comparable {
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }

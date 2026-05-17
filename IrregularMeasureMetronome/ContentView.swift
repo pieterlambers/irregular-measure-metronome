@@ -31,6 +31,7 @@ struct ContentView: View {
                 controls
                 sequenceHeader
                 measureNumberControls
+                loopRangeControls
                 sequenceList
                 loopIndicator
             }
@@ -221,6 +222,76 @@ struct ContentView: View {
         .padding(.bottom, 8)
     }
 
+    private var loopRangeControls: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                Text("loop range")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .tracking(1.1)
+                    .foregroundStyle(muted)
+                    .textCase(.uppercase)
+
+                Spacer()
+
+                Toggle("", isOn: $metronome.isLoopRangeEnabled)
+                    .labelsHidden()
+                    .tint(accent)
+            }
+
+            HStack(spacing: 10) {
+                loopBoundaryStepper(
+                    title: "from",
+                    value: Binding(
+                        get: { metronome.loopStartMeasureNumber },
+                        set: { metronome.updateLoopStartMeasureNumber($0) }
+                    ),
+                    range: metronome.startMeasureNumber...metronome.loopEndMeasureNumber
+                )
+
+                loopBoundaryStepper(
+                    title: "to",
+                    value: Binding(
+                        get: { metronome.loopEndMeasureNumber },
+                        set: { metronome.updateLoopEndMeasureNumber($0) }
+                    ),
+                    range: metronome.loopStartMeasureNumber...metronome.lastMeasureNumber
+                )
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(surface, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(metronome.isLoopRangeEnabled ? accent.opacity(0.55) : border, lineWidth: 1))
+        .padding(.horizontal, 24)
+        .padding(.bottom, 8)
+    }
+
+    private func loopBoundaryStepper(
+        title: String,
+        value: Binding<Int>,
+        range: ClosedRange<Int>
+    ) -> some View {
+        Stepper(value: value, in: range) {
+            HStack(spacing: 6) {
+                Text(title)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .tracking(1.1)
+                    .foregroundStyle(muted)
+                    .textCase(.uppercase)
+
+                Text("\(value.wrappedValue)")
+                    .font(.system(size: 14, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+            }
+        }
+        .tint(accent)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(background, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(border, lineWidth: 1))
+    }
+
     private var sequenceList: some View {
         VStack(spacing: 6) {
             insertionControl(at: 0)
@@ -228,11 +299,7 @@ struct ContentView: View {
             ForEach(Array(metronome.sequence.enumerated()), id: \.element.id) { index, measure in
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 10) {
-                        Text("\(metronome.measureNumber(forIndex: index))")
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(muted)
-                            .monospacedDigit()
-                            .frame(width: 36, alignment: .leading)
+                        measureNumberLabel(forIndex: index)
 
                         measureSignatureEditor(for: measure)
 
@@ -271,12 +338,43 @@ struct ContentView: View {
                     RoundedRectangle(cornerRadius: 14)
                         .stroke(index == metronome.currentMeasureIndex && metronome.isPlaying ? accent : border, lineWidth: 1.5)
                 )
+                .overlay(alignment: .leading) {
+                    if metronome.isMeasureInActiveLoop(index: index) {
+                        Rectangle()
+                            .fill(accent)
+                            .frame(width: 3)
+                            .clipShape(RoundedRectangle(cornerRadius: 2))
+                            .padding(.vertical, 10)
+                    }
+                }
 
                 insertionControl(at: index + 1)
             }
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
+    }
+
+    private func measureNumberLabel(forIndex index: Int) -> some View {
+        HStack(spacing: 3) {
+            if metronome.isLoopRangeEnabled && index == metronome.loopStartIndex {
+                Image(systemName: "repeat")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(accent)
+            }
+
+            Text("\(metronome.measureNumber(forIndex: index))")
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(metronome.isMeasureInActiveLoop(index: index) ? .white : muted)
+                .monospacedDigit()
+
+            if metronome.isLoopRangeEnabled && index == metronome.loopEndIndex {
+                Image(systemName: "repeat.1")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(accent)
+            }
+        }
+        .frame(width: 52, alignment: .leading)
     }
 
     private func groupingMenu(for measure: TimeSignature) -> some View {

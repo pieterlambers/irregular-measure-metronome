@@ -66,13 +66,30 @@ final class MetronomeModel: ObservableObject {
     @Published private(set) var currentMeasureIndex = 0
     @Published private(set) var currentBeat = -1
     @Published private(set) var loopCount = 1
+    @Published var isLoopRangeEnabled = false {
+        didSet {
+            guard oldValue != isLoopRangeEnabled else { return }
+            saveComposition()
+            restartPlaybackAtLoopStartIfNeeded()
+        }
+    }
+    @Published private(set) var loopStartIndex = 0
+    @Published private(set) var loopEndIndex = 0
     @Published var sequence: [TimeSignature] {
         didSet {
-            saveComposition()
+            let hadFullDisabledLoopRange = !isLoopRangeEnabled
+                && loopStartIndex == 0
+                && loopEndIndex >= max(0, oldValue.count - 1)
+            normalizeLoopRange()
+            if hadFullDisabledLoopRange {
+                loopStartIndex = 0
+                loopEndIndex = max(0, sequence.count - 1)
+            }
             if currentMeasureIndex >= sequence.count {
                 currentMeasureIndex = 0
                 currentBeat = -1
             }
+            saveComposition()
         }
     }
 
@@ -101,6 +118,10 @@ final class MetronomeModel: ObservableObject {
         )
         startMeasureNumber = composition.startMeasureNumber
         sequence = composition.sequence
+        isLoopRangeEnabled = composition.loopRange?.isEnabled ?? false
+        loopStartIndex = composition.loopRange?.startIndex ?? 0
+        loopEndIndex = composition.loopRange?.endIndex ?? max(0, composition.sequence.count - 1)
+        normalizeLoopRange()
     }
 
     var tempoName: String {
@@ -134,6 +155,42 @@ final class MetronomeModel: ObservableObject {
         startMeasureNumber + index
     }
 
+    var lastMeasureNumber: Int {
+        startMeasureNumber + max(0, sequence.count - 1)
+    }
+
+    var loopStartMeasureNumber: Int {
+        measureNumber(forIndex: loopStartIndex)
+    }
+
+    var loopEndMeasureNumber: Int {
+        measureNumber(forIndex: loopEndIndex)
+    }
+
+    func updateLoopStartMeasureNumber(_ measureNumber: Int) {
+        guard !sequence.isEmpty else { return }
+        let index = index(forMeasureNumber: measureNumber)
+            .clamped(to: 0...loopEndIndex)
+        guard loopStartIndex != index else { return }
+        loopStartIndex = index
+        saveComposition()
+        restartPlaybackAtLoopStartIfNeeded()
+    }
+
+    func updateLoopEndMeasureNumber(_ measureNumber: Int) {
+        guard !sequence.isEmpty else { return }
+        let index = index(forMeasureNumber: measureNumber)
+            .clamped(to: loopStartIndex...(sequence.count - 1))
+        guard loopEndIndex != index else { return }
+        loopEndIndex = index
+        saveComposition()
+        restartPlaybackAtLoopStartIfNeeded()
+    }
+
+    func isMeasureInActiveLoop(index: Int) -> Bool {
+        isLoopRangeEnabled && (loopStartIndex...loopEndIndex).contains(index)
+    }
+
     func togglePlayback() {
         isPlaying ? stop() : start()
     }
@@ -142,10 +199,10 @@ final class MetronomeModel: ObservableObject {
         guard !sequence.isEmpty else { return }
         isPlaying = true
         currentBeat = -1
-        currentMeasureIndex = 0
+        currentMeasureIndex = activeLoopStartIndex
         loopCount = 1
         pendulumDirection = 0
-        startPlayback(measureIndex: 0, beat: 0, loopCount: 1)
+        startPlayback(measureIndex: activeLoopStartIndex, beat: 0, loopCount: 1)
     }
 
     func stop() {
@@ -263,6 +320,8 @@ final class MetronomeModel: ObservableObject {
             sequence: sequence,
             startMeasureIndex: measureIndex,
             startBeat: beat,
+            loopStartIndex: activeLoopStartIndex,
+            loopEndIndex: activeLoopEndIndex,
             loopCount: loopCount
         ) { [weak self] measureIndex, beat, loopCount in
             Task { @MainActor [weak self] in
@@ -278,7 +337,46 @@ final class MetronomeModel: ObservableObject {
 
     private func restartPlaybackFromCurrentPosition() {
         let beat = max(0, currentBeat)
-        startPlayback(measureIndex: currentMeasureIndex, beat: beat, loopCount: loopCount)
+        let measureIndex = currentMeasureIndex.clamped(to: activeLoopStartIndex...activeLoopEndIndex)
+        startPlayback(measureIndex: measureIndex, beat: beat, loopCount: loopCount)
+    }
+
+    private var activeLoopStartIndex: Int {
+        guard isLoopRangeEnabled else { return 0 }
+        return loopStartIndex
+    }
+
+    private var activeLoopEndIndex: Int {
+        guard isLoopRangeEnabled else { return max(0, sequence.count - 1) }
+        return loopEndIndex
+    }
+
+    private func restartPlaybackAtLoopStartIfNeeded() {
+        guard isPlaying else { return }
+        currentBeat = -1
+        currentMeasureIndex = activeLoopStartIndex
+        loopCount = 1
+        pendulumDirection = 0
+        startPlayback(measureIndex: activeLoopStartIndex, beat: 0, loopCount: 1)
+    }
+
+    private func index(forMeasureNumber measureNumber: Int) -> Int {
+        measureNumber - startMeasureNumber
+    }
+
+    private func normalizeLoopRange() {
+        guard !sequence.isEmpty else {
+            loopStartIndex = 0
+            loopEndIndex = 0
+            return
+        }
+
+        let lastIndex = sequence.count - 1
+        loopStartIndex = loopStartIndex.clamped(to: 0...lastIndex)
+        loopEndIndex = loopEndIndex.clamped(to: 0...lastIndex)
+        if loopStartIndex > loopEndIndex {
+            loopStartIndex = loopEndIndex
+        }
     }
 
     private func showScheduledBeat(measureIndex: Int, beat: Int, loopCount: Int, generation: Int) {
@@ -309,7 +407,12 @@ final class MetronomeModel: ObservableObject {
         do {
             let composition = PersistedComposition(
                 startMeasureNumber: startMeasureNumber,
-                sequence: sequence
+                sequence: sequence,
+                loopRange: PersistedLoopRange(
+                    isEnabled: isLoopRangeEnabled,
+                    startIndex: loopStartIndex,
+                    endIndex: loopEndIndex
+                )
             )
             let data = try JSONEncoder().encode(composition)
             UserDefaults.standard.set(data, forKey: compositionStorageKey)
@@ -326,7 +429,8 @@ final class MetronomeModel: ObservableObject {
            let decoded = try? JSONDecoder().decode(PersistedComposition.self, from: data) {
             return PersistedComposition(
                 startMeasureNumber: decoded.startMeasureNumber.clamped(to: 0...9999),
-                sequence: cleanSequence(decoded.sequence)
+                sequence: cleanSequence(decoded.sequence),
+                loopRange: decoded.loopRange
             )
         }
 
@@ -334,11 +438,12 @@ final class MetronomeModel: ObservableObject {
            let decoded = try? JSONDecoder().decode([TimeSignature].self, from: data) {
             return PersistedComposition(
                 startMeasureNumber: 1,
-                sequence: cleanSequence(decoded)
+                sequence: cleanSequence(decoded),
+                loopRange: nil
             )
         }
 
-        return PersistedComposition(startMeasureNumber: 1, sequence: defaultSequence)
+        return PersistedComposition(startMeasureNumber: 1, sequence: defaultSequence, loopRange: nil)
     }
 
     private static func cleanSequence(_ sequence: [TimeSignature]) -> [TimeSignature] {
@@ -369,6 +474,13 @@ final class MetronomeModel: ObservableObject {
 private struct PersistedComposition: Codable {
     var startMeasureNumber: Int
     var sequence: [TimeSignature]
+    var loopRange: PersistedLoopRange?
+}
+
+private struct PersistedLoopRange: Codable {
+    var isEnabled: Bool
+    var startIndex: Int
+    var endIndex: Int
 }
 
 private extension Comparable {

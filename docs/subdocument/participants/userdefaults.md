@@ -2,7 +2,7 @@
 
 ## Responsibilities
 
-- Stores the encoded composition under `metro.composition.v2`, including `startMeasureNumber`, the measure sequence, and optional per-measure grouping arrays.
+- Stores the encoded composition under `metro.composition.v2`, including `startMeasureNumber`, the measure sequence, optional per-measure grouping arrays, and optional loop range settings.
 - Provides saved composition data during `MetronomeModel` initialization.
 - Allows `MetronomeModel` to migrate legacy encoded measure sequences from `metro.sequence.v1`.
 - Allows `MetronomeModel` to remove invalid persisted data when encoding fails.
