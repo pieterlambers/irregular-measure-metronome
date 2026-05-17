@@ -220,40 +220,46 @@ struct ContentView: View {
             insertionControl(at: 0)
 
             ForEach(Array(metronome.sequence.enumerated()), id: \.element.id) { index, measure in
-                HStack(spacing: 10) {
-                    Text("\(metronome.measureNumber(forIndex: index))")
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(muted)
-                        .monospacedDigit()
-                        .frame(width: 36, alignment: .leading)
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 10) {
+                        Text("\(metronome.measureNumber(forIndex: index))")
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(muted)
+                            .monospacedDigit()
+                            .frame(width: 36, alignment: .leading)
 
-                    Text(measure.label)
-                        .font(.system(size: 24, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.white)
-                        .frame(width: 64, alignment: .leading)
+                        Text(measure.label)
+                            .font(.system(size: 24, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.white)
+                            .frame(width: 64, alignment: .leading)
+
+                        groupingMenu(for: measure)
+
+                        Spacer(minLength: 0)
+
+                        Button {
+                            metronome.deleteMeasure(measure)
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(muted)
+                                .frame(width: 32, height: 32)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(metronome.sequence.count <= 1)
+                        .opacity(metronome.sequence.count <= 1 ? 0.35 : 1)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(border, lineWidth: 1))
+                    }
 
                     FlowLayout(spacing: 5, lineSpacing: 5) {
                         ForEach(0..<measure.numerator, id: \.self) { beat in
                             Circle()
-                                .fill(miniDotFill(index: index, beat: beat))
-                                .stroke(border, lineWidth: 1)
+                                .fill(miniDotFill(measureIndex: index, measure: measure, beat: beat))
+                                .stroke(miniDotStroke(measure: measure, beat: beat), lineWidth: 1)
                                 .frame(width: 11, height: 11)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Button {
-                        metronome.deleteMeasure(measure)
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(muted)
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(metronome.sequence.count <= 1)
-                    .opacity(metronome.sequence.count <= 1 ? 0.35 : 1)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(border, lineWidth: 1))
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
@@ -268,6 +274,37 @@ struct ContentView: View {
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
+    }
+
+    private func groupingMenu(for measure: TimeSignature) -> some View {
+        Menu {
+            Button("None") {
+                metronome.updateGrouping(for: measure, grouping: nil)
+            }
+
+            ForEach(groupingPresets(for: measure.numerator), id: \.self) { grouping in
+                Button(grouping.map(String.init).joined(separator: "+")) {
+                    metronome.updateGrouping(for: measure, grouping: grouping)
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(measure.groupingLabel)
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .bold))
+            }
+            .foregroundStyle(measure.validGrouping == nil ? muted : accent)
+            .frame(minWidth: 78, minHeight: 36)
+            .padding(.horizontal, 8)
+            .background(background, in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(border, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Grouping \(measure.groupingLabel)")
     }
 
     private func insertionControl(at index: Int) -> some View {
@@ -348,7 +385,7 @@ struct ContentView: View {
     private func validatedMeasureFields() -> (numerator: Int, denominator: Int)? {
         let numerator = Int(numeratorText) ?? 0
         let denominator = Int(denominatorText) ?? 0
-        invalidNumerator = !(1...32).contains(numerator)
+        invalidNumerator = !(1...24).contains(numerator)
         invalidDenominator = !(1...64).contains(denominator)
 
         guard !invalidNumerator, !invalidDenominator else { return nil }
@@ -361,23 +398,66 @@ struct ContentView: View {
     }
 
     private func dotStroke(for beat: Int) -> Color {
-        guard metronome.currentBeat == beat, metronome.isPlaying else { return border }
-        return beat == 0 ? .white : accent
+        if metronome.currentBeat == beat, metronome.isPlaying {
+            return beat == 0 ? .white : accent
+        }
+        guard metronome.currentMeasure.isSubaccented(beat: beat) else { return border }
+        return accent.opacity(0.65)
     }
 
     private func dotSize(for beat: Int) -> CGFloat {
-        guard metronome.currentBeat == beat, metronome.isPlaying else { return 34 }
+        guard metronome.currentBeat == beat, metronome.isPlaying else {
+            return metronome.currentMeasure.isSubaccented(beat: beat) ? 38 : 34
+        }
         return beat == 0 ? 44 : 40
     }
 
-    private func miniDotFill(index: Int, beat: Int) -> Color {
+    private func miniDotFill(measureIndex index: Int, measure: TimeSignature, beat: Int) -> Color {
         guard metronome.isPlaying,
               index == metronome.currentMeasureIndex,
               beat == metronome.currentBeat
         else {
+            if beat == 0 {
+                return .white.opacity(0.35)
+            }
+            if measure.isSubaccented(beat: beat) {
+                return accent.opacity(0.45)
+            }
             return Color(red: 0.22, green: 0.22, blue: 0.25)
         }
         return beat == 0 ? .white : accent
+    }
+
+    private func miniDotStroke(measure: TimeSignature, beat: Int) -> Color {
+        if beat == 0 {
+            return .white.opacity(0.55)
+        }
+        if measure.isSubaccented(beat: beat) {
+            return accent.opacity(0.75)
+        }
+        return border
+    }
+
+    private func groupingPresets(for numerator: Int) -> [[Int]] {
+        let curated: [Int: [[Int]]] = [
+            5: [[2, 3], [3, 2]],
+            7: [[2, 2, 3], [2, 3, 2], [3, 2, 2]],
+            8: [[3, 3, 2], [3, 2, 3], [2, 3, 3]],
+            9: [[2, 2, 2, 3], [2, 2, 3, 2], [2, 3, 2, 2], [3, 2, 2, 2], [3, 3, 3]],
+            10: [[3, 3, 2, 2], [3, 2, 3, 2], [2, 3, 3, 2], [2, 2, 3, 3]],
+            11: [[3, 3, 3, 2], [3, 3, 2, 3], [3, 2, 3, 3], [2, 3, 3, 3]],
+            12: [[3, 3, 3, 3], [2, 2, 2, 2, 2, 2], [4, 4, 4]]
+        ]
+
+        if let presets = curated[numerator] {
+            return presets
+        }
+
+        var presets: [[Int]] = []
+        for groupSize in [3, 4, 2] where numerator % groupSize == 0 {
+            presets.append(Array(repeating: groupSize, count: numerator / groupSize))
+        }
+        return Array(presets.prefix(4))
     }
 }
 

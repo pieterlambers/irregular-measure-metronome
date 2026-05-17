@@ -5,9 +5,35 @@ struct TimeSignature: Identifiable, Codable, Equatable, Sendable {
     var id = UUID()
     var numerator: Int
     var denominator: Int
+    var grouping: [Int]?
 
     var label: String {
         "\(numerator)/\(denominator)"
+    }
+
+    var groupingLabel: String {
+        validGrouping?.map(String.init).joined(separator: "+") ?? "None"
+    }
+
+    var validGrouping: [Int]? {
+        guard let grouping,
+              grouping.count > 1,
+              grouping.allSatisfy({ $0 > 0 }),
+              grouping.reduce(0, +) == numerator
+        else { return nil }
+        return grouping
+    }
+
+    func isSubaccented(beat: Int) -> Bool {
+        guard beat > 0, let validGrouping else { return false }
+        var groupStart = 0
+        for group in validGrouping.dropLast() {
+            groupStart += group
+            if beat == groupStart {
+                return true
+            }
+        }
+        return false
     }
 }
 
@@ -63,7 +89,7 @@ final class MetronomeModel: ObservableObject {
     private var playbackGeneration = 0
 
     private static let defaultSequence = [
-        TimeSignature(numerator: 7, denominator: 8),
+        TimeSignature(numerator: 7, denominator: 8, grouping: [2, 2, 3]),
         TimeSignature(numerator: 4, denominator: 4),
         TimeSignature(numerator: 3, denominator: 4)
     ]
@@ -167,7 +193,7 @@ final class MetronomeModel: ObservableObject {
     }
 
     func insertMeasure(at index: Int, numerator: Int, denominator: Int) -> Bool {
-        guard (1...32).contains(numerator), (1...64).contains(denominator) else {
+        guard (1...24).contains(numerator), (1...64).contains(denominator) else {
             return false
         }
 
@@ -182,6 +208,16 @@ final class MetronomeModel: ObservableObject {
     func deleteMeasure(_ measure: TimeSignature) {
         guard sequence.count > 1 else { return }
         sequence.removeAll { $0.id == measure.id }
+        if isPlaying {
+            stop()
+        }
+    }
+
+    func updateGrouping(for measure: TimeSignature, grouping: [Int]?) {
+        guard let index = sequence.firstIndex(where: { $0.id == measure.id }) else { return }
+        let cleaned = Self.cleanGrouping(grouping, numerator: sequence[index].numerator)
+        guard sequence[index].grouping != cleaned else { return }
+        sequence[index].grouping = cleaned
         if isPlaying {
             stop()
         }
@@ -275,9 +311,26 @@ final class MetronomeModel: ObservableObject {
 
     private static func cleanSequence(_ sequence: [TimeSignature]) -> [TimeSignature] {
         let clean = sequence.filter {
-            (1...32).contains($0.numerator) && (1...64).contains($0.denominator)
+            (1...24).contains($0.numerator) && (1...64).contains($0.denominator)
+        }
+        .map {
+            TimeSignature(
+                id: $0.id,
+                numerator: $0.numerator,
+                denominator: $0.denominator,
+                grouping: cleanGrouping($0.grouping, numerator: $0.numerator)
+            )
         }
         return clean.isEmpty ? defaultSequence : clean
+    }
+
+    private static func cleanGrouping(_ grouping: [Int]?, numerator: Int) -> [Int]? {
+        guard let grouping,
+              grouping.count > 1,
+              grouping.allSatisfy({ (1...4).contains($0) }),
+              grouping.reduce(0, +) == numerator
+        else { return nil }
+        return grouping
     }
 }
 

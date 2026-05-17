@@ -8,6 +8,7 @@ final class ClickEngine {
 
     private var format: AVAudioFormat?
     private var accentedBuffer: AVAudioPCMBuffer?
+    private var subaccentedBuffer: AVAudioPCMBuffer?
     private var regularBuffer: AVAudioPCMBuffer?
     private var silenceBuffers: [AVAudioFrameCount: AVAudioPCMBuffer] = [:]
     private var schedulerTimer: DispatchSourceTimer?
@@ -24,6 +25,9 @@ final class ClickEngine {
 
         if accentedBuffer == nil {
             accentedBuffer = Self.makeClickBuffer(frequency: 1800, gain: 0.42, format: format)
+        }
+        if subaccentedBuffer == nil {
+            subaccentedBuffer = Self.makeClickBuffer(frequency: 1450, gain: 0.34, format: format)
         }
         if regularBuffer == nil {
             regularBuffer = Self.makeClickBuffer(frequency: 1100, gain: 0.28, format: format)
@@ -113,13 +117,21 @@ final class ClickEngine {
     private func scheduleBeat(state: inout PlaybackState, generation: Int) {
         guard let format,
               let accentedBuffer,
+              let subaccentedBuffer,
               let regularBuffer
         else { return }
 
         let measure = state.sequence[state.measureIndex]
         let intervalSeconds = (60 / Double(state.bpm)) * (4 / Double(measure.denominator))
         let intervalFrames = AVAudioFrameCount(max(1, (intervalSeconds * format.sampleRate).rounded()))
-        let clickBuffer = state.beat == 0 ? accentedBuffer : regularBuffer
+        let clickBuffer: AVAudioPCMBuffer
+        if state.beat == 0 {
+            clickBuffer = accentedBuffer
+        } else if measure.isSubaccented(beat: state.beat) {
+            clickBuffer = subaccentedBuffer
+        } else {
+            clickBuffer = regularBuffer
+        }
         let silenceFrameCount = max(1, intervalFrames - clickBuffer.frameLength)
         let silenceBuffer = silenceBuffer(frameCount: silenceFrameCount, format: format)
         let beatMeasureIndex = state.measureIndex

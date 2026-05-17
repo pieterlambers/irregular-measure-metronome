@@ -28,7 +28,7 @@ sequenceDiagram
         Model->>Model: reset currentBeat, currentMeasureIndex, loopCount
         Model->>Model: increment playbackGeneration
         Model->>Engine: start(bpm, sequence, position, onBeat)
-        Engine->>Engine: prepare audio engine, player, and click buffers
+        Engine->>Engine: prepare audio engine, player, and accented/subaccented/regular click buffers
         Engine->>Queue: stop previous scheduler and create generation
         Queue->>Queue: fill buffered queue up to maxQueuedBeats
         Queue->>Engine: schedule click buffer and silence buffer per beat
@@ -110,7 +110,7 @@ sequenceDiagram
         User->>View: Type denominator
         View->>View: update denominatorText
         User->>View: Tap insert button at a sequence boundary
-        View->>View: validate numerator 1...32 and denominator 1...64
+        View->>View: validate numerator 1...24 and denominator 1...64
         alt Inputs are invalid
             View->>View: mark invalid fields
         else Inputs are valid
@@ -125,6 +125,21 @@ sequenceDiagram
             end
             Model-->>View: publish updated sequence
         end
+    end
+
+    rect rgb(35, 35, 40)
+        Note over User,Defaults: Change Measure Grouping
+        User->>View: Open grouping picker on a sequence row
+        User->>View: Choose None or a grouping preset
+        View->>Model: updateGrouping(for, grouping)
+        Model->>Model: validate grouping sums to numerator
+        Model->>Defaults: save encoded composition
+        alt Playback is running
+            Model->>Model: stop()
+            Model->>Engine: stop buffered scheduling
+            Model->>Timer: cancel flashTask
+        end
+        Model-->>View: publish updated sequence and grouping label
     end
 
     rect rgb(35, 35, 40)

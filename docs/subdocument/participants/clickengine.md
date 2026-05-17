@@ -5,9 +5,9 @@
 - Owns audio engine setup for metronome clicks.
 - Prepares `AVAudioEngine`, `AVAudioPlayerNode`, and click buffers.
 - Configures playback audio session behavior.
-- Generates separate accented and regular click buffers.
+- Generates separate accented, subaccented, and regular click buffers.
 - Starts buffered playback for a BPM, measure sequence, starting beat, starting measure, and loop count.
-- Schedules each beat as a click buffer followed by a calculated silence buffer.
+- Schedules each beat as a click buffer followed by a calculated silence buffer, using subaccent clicks for configured grouping starts.
 - Calculates beat intervals from BPM and each measure denominator.
 - Maintains a private serial scheduler queue and `DispatchSourceTimer` to keep the audio queue filled.
 - Caps the buffered queue at `maxQueuedBeats`, currently `12`.

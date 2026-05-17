@@ -8,6 +8,7 @@
 - Sets tempo by tapping the TEMPO button repeatedly.
 - Enters numerator and denominator values for new measures.
 - Inserts valid measures at sequence boundaries, including before the first measure.
+- Chooses optional grouping presets for a measure, such as `2+2+3` in `7/8`.
 - Deletes existing measures when more than one measure remains.
 
 ## Future Change Notes

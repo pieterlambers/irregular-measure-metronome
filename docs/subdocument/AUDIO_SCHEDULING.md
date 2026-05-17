@@ -20,7 +20,7 @@ This document describes the buffered audio scheduling behavior in the latest com
 - `ClickEngine` schedules ahead on a private serial `DispatchQueue` named `metro.click-engine.scheduler`.
 - It keeps up to `maxQueuedBeats` buffered beats, currently `12`.
 - Each beat is scheduled as a click buffer followed by a silence buffer.
-- The click buffer is accented when the scheduled beat is `0`; other beats use the regular click buffer.
+- The click buffer is accented when the scheduled beat is `0`, subaccented when the beat starts a configured measure grouping, and regular otherwise.
 - Silence buffer length is calculated from the current BPM and the current measure denominator:
 
 ```swift
@@ -55,4 +55,4 @@ This callback is used for UI state, not for audio playback. When it fires, `Metr
 - Keep audio queue timing inside `ClickEngine` unless the scheduling architecture intentionally changes.
 - Keep published playback state and stale-callback filtering in `MetronomeModel`.
 - Update `ARCHITECTURE.md`, `USER_ACTION_SEQUENCE.md`, and the participant files when changing this scheduling flow.
-- If `maxQueuedBeats`, the refill timer interval, click duration, callback strategy, or silence-buffer caching changes, update this document in the same change.
+- If `maxQueuedBeats`, the refill timer interval, click duration, click buffer roles, callback strategy, or silence-buffer caching changes, update this document in the same change.
