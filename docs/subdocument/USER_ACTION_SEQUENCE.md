@@ -109,13 +109,13 @@ sequenceDiagram
         View->>View: update numeratorText
         User->>View: Type denominator
         View->>View: update denominatorText
-        User->>View: Tap insert button on a sequence row
+        User->>View: Tap insert button at a sequence boundary
         View->>View: validate numerator 1...32 and denominator 1...64
         alt Inputs are invalid
             View->>View: mark invalid fields
         else Inputs are valid
-            View->>Model: insertMeasure(after, numerator, denominator)
-            Model->>Model: insert TimeSignature after selected row
+            View->>Model: insertMeasure(at, numerator, denominator)
+            Model->>Model: insert TimeSignature at selected boundary
             Model->>Defaults: save encoded composition
             Model->>Model: derive consecutive measure numbers from startMeasureNumber
             alt Playback is running

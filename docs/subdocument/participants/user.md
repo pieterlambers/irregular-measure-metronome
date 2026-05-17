@@ -7,7 +7,7 @@
 - Changes tempo directly with the BPM slider.
 - Sets tempo by tapping the TEMPO button repeatedly.
 - Enters numerator and denominator values for new measures.
-- Inserts valid measures after an existing sequence measure.
+- Inserts valid measures at sequence boundaries, including before the first measure.
 - Deletes existing measures when more than one measure remains.
 
 ## Future Change Notes

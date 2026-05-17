@@ -216,7 +216,9 @@ struct ContentView: View {
     }
 
     private var sequenceList: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
+            insertionControl(at: 0)
+
             ForEach(Array(metronome.sequence.enumerated()), id: \.element.id) { index, measure in
                 HStack(spacing: 10) {
                     Text("\(metronome.measureNumber(forIndex: index))")
@@ -241,17 +243,6 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     Button {
-                        insertMeasureAfter(measure)
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(accent)
-                            .frame(width: 32, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(border, lineWidth: 1))
-
-                    Button {
                         metronome.deleteMeasure(measure)
                     } label: {
                         Image(systemName: "xmark")
@@ -271,10 +262,37 @@ struct ContentView: View {
                     RoundedRectangle(cornerRadius: 14)
                         .stroke(index == metronome.currentMeasureIndex && metronome.isPlaying ? accent : border, lineWidth: 1.5)
                 )
+
+                insertionControl(at: index + 1)
             }
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
+    }
+
+    private func insertionControl(at index: Int) -> some View {
+        HStack(spacing: 8) {
+            Rectangle()
+                .fill(border)
+                .frame(height: 1)
+
+            Button {
+                insertMeasure(at: index)
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.plain)
+            .background(background, in: Circle())
+            .overlay(Circle().stroke(border, lineWidth: 1))
+            .accessibilityLabel("Insert measure here")
+
+            Rectangle()
+                .fill(border)
+                .frame(height: 1)
+        }
     }
 
     private var measureInputs: some View {
@@ -318,10 +336,10 @@ struct ContentView: View {
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(invalid ? .red : border, lineWidth: 1))
     }
 
-    private func insertMeasureAfter(_ measure: TimeSignature) {
+    private func insertMeasure(at index: Int) {
         guard let values = validatedMeasureFields() else { return }
         _ = metronome.insertMeasure(
-            after: measure,
+            at: index,
             numerator: values.numerator,
             denominator: values.denominator
         )

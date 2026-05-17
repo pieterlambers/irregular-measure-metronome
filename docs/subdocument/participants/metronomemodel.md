@@ -12,7 +12,7 @@
 - Restarts buffered playback from the current position when BPM changes during playback.
 - Manages tap tempo timing, averaging, BPM clamping, and tap reset behavior.
 - Derives displayed measure numbers from `startMeasureNumber + sequence index`.
-- Inserts and deletes measures while keeping sequence state valid and measure numbers consecutive.
+- Inserts measures at selected sequence indices and deletes measures while keeping sequence state valid and measure numbers consecutive.
 - Saves and loads the composition through `UserDefaults`.
 - Migrates legacy persisted measure sequences into the current composition format.
 - Sanitizes persisted composition data and falls back to the default sequence when needed.
