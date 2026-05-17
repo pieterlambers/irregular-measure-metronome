@@ -24,8 +24,8 @@ struct ContentView: View {
                 controls
                 sequenceHeader
                 measureNumberControls
+                measureInputs
                 sequenceList
-                addMeasure
                 loopIndicator
             }
             .padding(.bottom, 24)
@@ -277,30 +277,13 @@ struct ContentView: View {
         .padding(.bottom, 12)
     }
 
-    private var addMeasure: some View {
+    private var measureInputs: some View {
         HStack(spacing: 8) {
             measureField(text: $numeratorText, invalid: invalidNumerator)
             Text("/")
                 .font(.system(size: 22, design: .monospaced))
                 .foregroundStyle(muted)
             measureField(text: $denominatorText, invalid: invalidDenominator)
-
-            Spacer(minLength: 8)
-
-            Button {
-                addMeasureFromFields()
-            } label: {
-                Label("add", systemImage: "plus")
-                    .labelStyle(.titleAndIcon)
-                    .font(.system(size: 13, weight: .medium, design: .monospaced))
-                    .tracking(0.8)
-                    .foregroundStyle(accent)
-                    .padding(.horizontal, 16)
-                    .frame(height: 44)
-            }
-            .buttonStyle(.plain)
-            .background(accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(accent.opacity(0.35), lineWidth: 1))
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 10)
@@ -333,11 +316,6 @@ struct ContentView: View {
             .frame(width: 76, height: 44)
             .background(surface, in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(invalid ? .red : border, lineWidth: 1))
-    }
-
-    private func addMeasureFromFields() {
-        guard let values = validatedMeasureFields() else { return }
-        _ = metronome.addMeasure(numerator: values.numerator, denominator: values.denominator)
     }
 
     private func insertMeasureAfter(_ measure: TimeSignature) {

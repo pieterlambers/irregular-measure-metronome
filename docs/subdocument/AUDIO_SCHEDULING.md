@@ -48,7 +48,7 @@ This callback is used for UI state, not for audio playback. When it fires, `Metr
 - The restart keeps the current measure, current beat, and loop count, increments the model playback generation, and starts a fresh `ClickEngine` scheduling generation.
 - `ClickEngine` generation checks prevent stale scheduler work and stale callbacks from updating the model after a restart.
 - `MetronomeModel.stop()` increments `playbackGeneration`, tells `ClickEngine` to stop, cancels flash state, resets `currentBeat` to `-1`, and resets `pendulumDirection` to `0`.
-- Adding or deleting a measure persists the updated sequence and stops playback when it was running.
+- Inserting or deleting a measure persists the updated sequence and stops playback when it was running.
 
 ## Maintenance Notes
 

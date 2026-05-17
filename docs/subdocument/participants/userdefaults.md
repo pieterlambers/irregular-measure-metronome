@@ -12,4 +12,4 @@
 
 - Update this file if the storage key, stored payload, migration strategy, or persistence backend changes.
 - Update `ARCHITECTURE.md` if persistence moves away from `UserDefaults`.
-- Keep persistence behavior reflected in `USER_ACTION_SEQUENCE.md` for add and delete measure flows.
+- Keep persistence behavior reflected in `USER_ACTION_SEQUENCE.md` for insert and delete measure flows.

@@ -17,7 +17,7 @@ flowchart TD
     A -->|"injects via .environmentObject"| C["ContentView<br/>SwiftUI View"]
 
     C -->|"reads state"| B
-    C -->|"user actions:<br/>play/pause, tap tempo,<br/>BPM slider, start measure,<br/>add/insert/delete measure"| B
+    C -->|"user actions:<br/>play/pause, tap tempo,<br/>BPM slider, start measure,<br/>insert/delete measure"| B
 
     B -->|"publishes UI state:<br/>bpm, isPlaying, currentBeat,<br/>currentMeasureIndex, loopCount,<br/>flashBPM, pendulumDirection,<br/>sequence, startMeasureNumber,<br/>tapTempoText"| C
 

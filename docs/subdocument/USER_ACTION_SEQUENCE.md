@@ -104,31 +104,7 @@ sequenceDiagram
     end
 
     rect rgb(35, 35, 40)
-        Note over User,Defaults: Edit Measure Fields and Add Measure
-        User->>View: Type numerator
-        View->>View: update numeratorText
-        User->>View: Type denominator
-        View->>View: update denominatorText
-        User->>View: Tap add button
-        View->>View: addMeasureFromFields()
-        View->>View: validate numerator 1...32 and denominator 1...64
-        alt Inputs are invalid
-            View->>View: mark invalid fields
-        else Inputs are valid
-            View->>Model: addMeasure(numerator, denominator)
-            Model->>Model: append TimeSignature
-            Model->>Defaults: save encoded composition
-            alt Playback is running
-                Model->>Model: stop()
-                Model->>Engine: stop buffered scheduling
-                Model->>Timer: cancel flashTask
-            end
-            Model-->>View: publish updated sequence
-        end
-    end
-
-    rect rgb(35, 35, 40)
-        Note over User,Defaults: Insert Measure
+        Note over User,Defaults: Edit Measure Fields and Insert Measure
         User->>View: Type numerator
         View->>View: update numeratorText
         User->>View: Type denominator

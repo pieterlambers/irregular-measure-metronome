@@ -159,10 +159,6 @@ final class MetronomeModel: ObservableObject {
         tapTempoText = "\(bpm)"
     }
 
-    func addMeasure(numerator: Int, denominator: Int) -> Bool {
-        insertMeasure(at: sequence.count, numerator: numerator, denominator: denominator)
-    }
-
     func insertMeasure(after measure: TimeSignature, numerator: Int, denominator: Int) -> Bool {
         guard let index = sequence.firstIndex(where: { $0.id == measure.id }) else {
             return false

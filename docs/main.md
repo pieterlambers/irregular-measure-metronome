@@ -15,7 +15,7 @@ Use these docs as working context before adjusting the code:
 
 - Check [Architecture](subdocument/ARCHITECTURE.md) before changing ownership between `ContentView`, `MetronomeModel`, `ClickEngine`, persistence, or timing.
 - Check [Audio Scheduling](subdocument/AUDIO_SCHEDULING.md) before changing `ClickEngine` buffering, scheduler queue behavior, callback timing, or playback restarts.
-- Check [User Action Sequence Diagram](subdocument/USER_ACTION_SEQUENCE.md) before changing play/pause, BPM changes, tap tempo, measure entry, add measure, or delete measure behavior.
+- Check [User Action Sequence Diagram](subdocument/USER_ACTION_SEQUENCE.md) before changing play/pause, BPM changes, tap tempo, measure entry, insert measure, or delete measure behavior.
 - Check [Sequence Participants](subdocument/participants) before changing a participant's responsibilities.
 - Update the diagrams in the same change when adding, removing, or rerouting a user action.
 - Keep `MetronomeModel` as the source of truth for published playback state, sequence state, tap tempo, and persistence unless the architecture is intentionally changed.
