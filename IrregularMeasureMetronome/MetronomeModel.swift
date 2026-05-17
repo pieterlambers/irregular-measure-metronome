@@ -205,12 +205,44 @@ final class MetronomeModel: ObservableObject {
         return true
     }
 
+    func duplicateMeasure(at index: Int) -> Bool {
+        guard !sequence.isEmpty else { return false }
+        let templateIndex = index == 0 ? 0 : (index - 1).clamped(to: 0...(sequence.count - 1))
+        let template = sequence[templateIndex]
+        let copy = TimeSignature(
+            numerator: template.numerator,
+            denominator: template.denominator,
+            grouping: template.validGrouping
+        )
+        sequence.insert(copy, at: index.clamped(to: 0...sequence.count))
+        if isPlaying {
+            stop()
+        }
+        return true
+    }
+
     func deleteMeasure(_ measure: TimeSignature) {
         guard sequence.count > 1 else { return }
         sequence.removeAll { $0.id == measure.id }
         if isPlaying {
             stop()
         }
+    }
+
+    func updateMeasure(_ measure: TimeSignature, numerator: Int, denominator: Int) -> Bool {
+        guard (1...24).contains(numerator), (1...64).contains(denominator),
+              let index = sequence.firstIndex(where: { $0.id == measure.id })
+        else {
+            return false
+        }
+
+        sequence[index].numerator = numerator
+        sequence[index].denominator = denominator
+        sequence[index].grouping = Self.cleanGrouping(sequence[index].grouping, numerator: numerator)
+        if isPlaying {
+            stop()
+        }
+        return true
     }
 
     func updateGrouping(for measure: TimeSignature, grouping: [Int]?) {

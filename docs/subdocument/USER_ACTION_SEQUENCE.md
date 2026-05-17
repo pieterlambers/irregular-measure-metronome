@@ -104,20 +104,28 @@ sequenceDiagram
     end
 
     rect rgb(35, 35, 40)
-        Note over User,Defaults: Edit Measure Fields and Insert Measure
-        User->>View: Type numerator
-        View->>View: update numeratorText
-        User->>View: Type denominator
-        View->>View: update denominatorText
+        Note over User,Defaults: Duplicate Local Measure and Edit Inline
         User->>View: Tap insert button at a sequence boundary
+        View->>Model: duplicateMeasure(at)
+        Model->>Model: copy first measure when inserting before row 1
+        Model->>Model: otherwise copy previous measure and grouping
+        Model->>Defaults: save encoded composition
+        Model->>Model: derive consecutive measure numbers from startMeasureNumber
+        alt Playback is running
+            Model->>Model: stop()
+            Model->>Engine: stop buffered scheduling
+            Model->>Timer: cancel flashTask
+        end
+        Model-->>View: publish updated sequence
+        View->>View: open inline editor for inserted measure
+        User->>View: Edit numerator or denominator in the row
         View->>View: validate numerator 1...24 and denominator 1...64
         alt Inputs are invalid
-            View->>View: mark invalid fields
+            View->>View: mark invalid inline fields
         else Inputs are valid
-            View->>Model: insertMeasure(at, numerator, denominator)
-            Model->>Model: insert TimeSignature at selected boundary
+            View->>Model: updateMeasure(measure, numerator, denominator)
+            Model->>Model: update TimeSignature and clean invalid grouping
             Model->>Defaults: save encoded composition
-            Model->>Model: derive consecutive measure numbers from startMeasureNumber
             alt Playback is running
                 Model->>Model: stop()
                 Model->>Engine: stop buffered scheduling
