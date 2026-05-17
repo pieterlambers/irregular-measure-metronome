@@ -21,6 +21,59 @@ sequenceDiagram
     participant Queue as ClickEngine scheduler queue
 
     rect rgb(35, 35, 40)
+        Note over User,Defaults: Select Song
+        User->>View: Choose song from song menu
+        View->>Model: selectSong(song)
+        Model->>Defaults: save current song into encoded song library
+        Model->>Model: stop()
+        Model->>Engine: stop buffered scheduling
+        Model->>Model: apply selected song name, BPM, sequence, start measure, and loop range
+        Model->>Defaults: save encoded song library with currentSongID
+        Model-->>View: publish selected song state
+    end
+
+    rect rgb(35, 35, 40)
+        Note over User,Defaults: Rename Song
+        User->>View: Edit song name field
+        View->>Model: currentSongName = typed value
+        Model->>Model: limit name to 60 characters
+        Model->>Defaults: save encoded song library
+        Model-->>View: publish renamed current song
+    end
+
+    rect rgb(35, 35, 40)
+        Note over User,Defaults: Create, Duplicate, or Delete Song
+        alt Create song
+            User->>View: Tap new song button
+            View->>Model: createSong()
+            Model->>Defaults: save current song into encoded song library
+            Model->>Model: stop()
+            Model->>Model: append default named song
+            Model->>Model: apply new song
+            Model->>Defaults: save encoded song library
+        else Duplicate song
+            User->>View: Tap duplicate song button
+            View->>Model: duplicateCurrentSong()
+            Model->>Defaults: save current song into encoded song library
+            Model->>Model: stop()
+            Model->>Model: copy current song with new ID, copied measure IDs, and Copy name
+            Model->>Model: apply duplicated song
+            Model->>Defaults: save encoded song library
+        else Delete song
+            User->>View: Tap delete song button
+            alt Only one song remains
+                View->>View: delete button is disabled
+            else More than one song remains
+                View->>Model: deleteCurrentSong()
+                Model->>Model: stop()
+                Model->>Model: remove current song and apply next available song
+                Model->>Defaults: save encoded song library
+            end
+        end
+        Model-->>View: publish updated song list and current song
+    end
+
+    rect rgb(35, 35, 40)
         Note over User,Timer: Play
         User->>View: Tap play button
         View->>Model: togglePlayback()
@@ -60,6 +113,7 @@ sequenceDiagram
         User->>View: Drag BPM slider
         View->>Model: bpm = rounded slider value
         Model->>Model: clamp bpm to 20...300
+        Model->>Defaults: save encoded song library
         alt Playback is running
             Model->>Model: restartPlaybackFromCurrentPosition()
             Model->>Model: increment playbackGeneration
@@ -83,6 +137,7 @@ sequenceDiagram
         else 2 or more taps
             Model->>Model: average tap intervals
             Model->>Model: bpm = clamped calculated tempo
+            Model->>Defaults: save encoded song library
             Model->>Model: tapTempoText = bpm
             alt Playback is running
                 Model->>Model: restartPlaybackFromCurrentPosition()
@@ -99,7 +154,7 @@ sequenceDiagram
         User->>View: Adjust first measure stepper
         View->>Model: startMeasureNumber = new value
         Model->>Model: clamp startMeasureNumber to 0...9999
-        Model->>Defaults: save encoded composition
+        Model->>Defaults: save encoded song library
         Model-->>View: publish consecutive displayed measure numbers
     end
 
@@ -108,7 +163,7 @@ sequenceDiagram
         User->>View: Toggle loop range or adjust from/to steppers
         View->>Model: isLoopRangeEnabled / updateLoopStartMeasureNumber() / updateLoopEndMeasureNumber()
         Model->>Model: map displayed measure numbers to clamped sequence indices
-        Model->>Defaults: save encoded composition
+        Model->>Defaults: save encoded song library
         alt Playback is running
             Model->>Model: restartPlaybackAtLoopStartIfNeeded()
             Model->>Engine: start(bpm, sequence, loop start, active loop range, onBeat)
@@ -123,7 +178,7 @@ sequenceDiagram
         View->>Model: duplicateMeasure(at)
         Model->>Model: copy first measure when inserting before row 1
         Model->>Model: otherwise copy previous measure and grouping
-        Model->>Defaults: save encoded composition
+        Model->>Defaults: save encoded song library
         Model->>Model: derive consecutive measure numbers from startMeasureNumber
         alt Playback is running
             Model->>Model: stop()
@@ -139,7 +194,7 @@ sequenceDiagram
         else Inputs are valid
             View->>Model: updateMeasure(measure, numerator, denominator)
             Model->>Model: update TimeSignature and clean invalid grouping
-            Model->>Defaults: save encoded composition
+            Model->>Defaults: save encoded song library
             alt Playback is running
                 Model->>Model: stop()
                 Model->>Engine: stop buffered scheduling
@@ -155,7 +210,7 @@ sequenceDiagram
         User->>View: Choose None or a grouping preset
         View->>Model: updateGrouping(for, grouping)
         Model->>Model: validate grouping sums to numerator
-        Model->>Defaults: save encoded composition
+        Model->>Defaults: save encoded song library
         alt Playback is running
             Model->>Model: stop()
             Model->>Engine: stop buffered scheduling
@@ -172,7 +227,7 @@ sequenceDiagram
         else More than one measure remains
             View->>Model: deleteMeasure(measure)
             Model->>Model: remove matching TimeSignature
-            Model->>Defaults: save encoded composition
+            Model->>Defaults: save encoded song library
             Model->>Model: derive consecutive measure numbers from startMeasureNumber
             alt Playback is running
                 Model->>Model: stop()

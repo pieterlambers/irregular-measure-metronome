@@ -24,6 +24,7 @@ struct ContentView: View {
         ScrollView {
             VStack(spacing: 0) {
                 header
+                songControls
                 tempo
                 slider
                 beatDots
@@ -63,6 +64,93 @@ struct ContentView: View {
         .padding(.horizontal, 24)
         .padding(.top, 16)
         .padding(.bottom, 8)
+    }
+
+    private var songControls: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Menu {
+                    ForEach(metronome.songs) { song in
+                        Button {
+                            metronome.selectSong(song)
+                            endMeasureEditing()
+                        } label: {
+                            if song.id == metronome.currentSongID {
+                                Label(song.name, systemImage: "checkmark")
+                            } else {
+                                Text(song.name)
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemName: "music.note.list")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(accent)
+                        .frame(width: 38, height: 38)
+                        .background(background, in: RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(border, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Choose song")
+
+                TextField("Song name", text: $metronome.currentSongName)
+                    .textInputAutocapitalization(.words)
+                    .disableAutocorrection(true)
+                    .font(.system(size: 18, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .frame(height: 38)
+                    .background(background, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(border, lineWidth: 1))
+                    .accessibilityLabel("Song name")
+
+                songIconButton("plus", label: "New song") {
+                    metronome.createSong()
+                    endMeasureEditing()
+                }
+            }
+
+            HStack(spacing: 8) {
+                songIconButton("doc.on.doc", label: "Duplicate song") {
+                    metronome.duplicateCurrentSong()
+                    endMeasureEditing()
+                }
+
+                songIconButton("trash", label: "Delete song") {
+                    metronome.deleteCurrentSong()
+                    endMeasureEditing()
+                }
+                .disabled(metronome.songs.count <= 1)
+                .opacity(metronome.songs.count <= 1 ? 0.35 : 1)
+
+                Spacer()
+
+                Text("\(metronome.songs.count) \(metronome.songs.count == 1 ? "song" : "songs")")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .tracking(1.1)
+                    .foregroundStyle(muted)
+                    .textCase(.uppercase)
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 14)
+    }
+
+    private func songIconButton(
+        _ systemName: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(accent)
+                .frame(width: 38, height: 34)
+        }
+        .buttonStyle(.plain)
+        .background(surface, in: RoundedRectangle(cornerRadius: 9))
+        .overlay(RoundedRectangle(cornerRadius: 9).stroke(border, lineWidth: 1))
+        .accessibilityLabel(label)
     }
 
     private var tempo: some View {
@@ -530,6 +618,15 @@ struct ContentView: View {
         invalidEditNumerator = false
         invalidEditDenominator = false
         focusedMeasureField = .numerator(measure.id)
+    }
+
+    private func endMeasureEditing() {
+        editingMeasureID = nil
+        editNumeratorText = ""
+        editDenominatorText = ""
+        invalidEditNumerator = false
+        invalidEditDenominator = false
+        focusedMeasureField = nil
     }
 
     private func commitMeasureEdit() {

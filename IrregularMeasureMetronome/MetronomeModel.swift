@@ -37,8 +37,31 @@ struct TimeSignature: Identifiable, Codable, Equatable, Sendable {
     }
 }
 
+struct Song: Identifiable, Codable, Equatable, Sendable {
+    var id = UUID()
+    var name: String
+    var bpm: Int
+    var startMeasureNumber: Int
+    var sequence: [TimeSignature]
+    var loopRange: PersistedLoopRange?
+    var updatedAt: Date = Date()
+}
+
 @MainActor
 final class MetronomeModel: ObservableObject {
+    @Published private(set) var songs: [Song] = []
+    @Published private(set) var currentSongID = UUID()
+    @Published var currentSongName = "" {
+        didSet {
+            let limitedName = String(currentSongName.prefix(60))
+            if currentSongName != limitedName {
+                currentSongName = limitedName
+                return
+            }
+            saveCurrentSong()
+        }
+    }
+
     @Published var startMeasureNumber: Int = 1 {
         didSet {
             let clamped = startMeasureNumber.clamped(to: 0...9999)
@@ -46,7 +69,7 @@ final class MetronomeModel: ObservableObject {
                 startMeasureNumber = clamped
                 return
             }
-            saveComposition()
+            saveCurrentSong()
         }
     }
 
@@ -55,10 +78,12 @@ final class MetronomeModel: ObservableObject {
             let clamped = min(300, max(20, bpm))
             if bpm != clamped {
                 bpm = clamped
+                return
             }
             if isPlaying {
                 restartPlaybackFromCurrentPosition()
             }
+            saveCurrentSong()
         }
     }
 
@@ -69,13 +94,13 @@ final class MetronomeModel: ObservableObject {
     @Published var isLoopRangeEnabled = false {
         didSet {
             guard oldValue != isLoopRangeEnabled else { return }
-            saveComposition()
+            saveCurrentSong()
             restartPlaybackAtLoopStartIfNeeded()
         }
     }
     @Published private(set) var loopStartIndex = 0
     @Published private(set) var loopEndIndex = 0
-    @Published var sequence: [TimeSignature] {
+    @Published var sequence: [TimeSignature] = [] {
         didSet {
             let hadFullDisabledLoopRange = !isLoopRangeEnabled
                 && loopStartIndex == 0
@@ -89,7 +114,7 @@ final class MetronomeModel: ObservableObject {
                 currentMeasureIndex = 0
                 currentBeat = -1
             }
-            saveComposition()
+            saveCurrentSong()
         }
     }
 
@@ -99,11 +124,13 @@ final class MetronomeModel: ObservableObject {
 
     private let compositionStorageKey = "metro.composition.v2"
     private let legacySequenceStorageKey = "metro.sequence.v1"
+    private let songLibraryStorageKey = "metro.songLibrary.v1"
     private let clickEngine = ClickEngine()
     private var flashTask: Task<Void, Never>?
     private var tapResetTask: Task<Void, Never>?
     private var tapTimes: [Date] = []
     private var playbackGeneration = 0
+    private var isApplyingSong = false
 
     private static let defaultSequence = [
         TimeSignature(numerator: 7, denominator: 8, grouping: [2, 2, 3]),
@@ -112,16 +139,16 @@ final class MetronomeModel: ObservableObject {
     ]
 
     init() {
-        let composition = Self.loadComposition(
+        let library = Self.loadSongLibrary(
+            songLibraryStorageKey: songLibraryStorageKey,
             compositionStorageKey: compositionStorageKey,
             legacySequenceStorageKey: legacySequenceStorageKey
         )
-        startMeasureNumber = composition.startMeasureNumber
-        sequence = composition.sequence
-        isLoopRangeEnabled = composition.loopRange?.isEnabled ?? false
-        loopStartIndex = composition.loopRange?.startIndex ?? 0
-        loopEndIndex = composition.loopRange?.endIndex ?? max(0, composition.sequence.count - 1)
+        songs = library.songs
+        let currentSong = library.songs.first { $0.id == library.currentSongID } ?? library.songs[0]
+        applySong(currentSong, savePreviousSong: false)
         normalizeLoopRange()
+        saveSongLibrary()
     }
 
     var tempoName: String {
@@ -151,6 +178,57 @@ final class MetronomeModel: ObservableObject {
         return sequence[currentMeasureIndex]
     }
 
+    var currentSong: Song {
+        songs.first { $0.id == currentSongID } ?? Self.defaultSong()
+    }
+
+    func selectSong(_ song: Song) {
+        guard song.id != currentSongID else { return }
+        guard let storedSong = songs.first(where: { $0.id == song.id }) else { return }
+        applySong(storedSong, savePreviousSong: true)
+        saveSongLibrary()
+    }
+
+    func createSong() {
+        saveCurrentSong()
+        stop()
+
+        let song = Self.defaultSong(named: nextUntitledSongName())
+        songs.append(song)
+        applySong(song, savePreviousSong: false)
+        saveSongLibrary()
+    }
+
+    func duplicateCurrentSong() {
+        saveCurrentSong()
+        stop()
+
+        var song = currentSong
+        song.id = UUID()
+        song.name = nextCopyName(for: song.name)
+        song.updatedAt = Date()
+        song.sequence = song.sequence.map {
+            TimeSignature(
+                numerator: $0.numerator,
+                denominator: $0.denominator,
+                grouping: $0.validGrouping
+            )
+        }
+        songs.append(song)
+        applySong(song, savePreviousSong: false)
+        saveSongLibrary()
+    }
+
+    func deleteCurrentSong() {
+        guard songs.count > 1 else { return }
+        let deletedID = currentSongID
+        let nextSong = songs.first { $0.id != deletedID } ?? Self.defaultSong()
+        stop()
+        songs.removeAll { $0.id == deletedID }
+        applySong(nextSong, savePreviousSong: false)
+        saveSongLibrary()
+    }
+
     func measureNumber(forIndex index: Int) -> Int {
         startMeasureNumber + index
     }
@@ -173,7 +251,7 @@ final class MetronomeModel: ObservableObject {
             .clamped(to: 0...loopEndIndex)
         guard loopStartIndex != index else { return }
         loopStartIndex = index
-        saveComposition()
+        saveCurrentSong()
         restartPlaybackAtLoopStartIfNeeded()
     }
 
@@ -183,7 +261,7 @@ final class MetronomeModel: ObservableObject {
             .clamped(to: loopStartIndex...(sequence.count - 1))
         guard loopEndIndex != index else { return }
         loopEndIndex = index
-        saveComposition()
+        saveCurrentSong()
         restartPlaybackAtLoopStartIfNeeded()
     }
 
@@ -403,47 +481,122 @@ final class MetronomeModel: ObservableObject {
         }
     }
 
-    private func saveComposition() {
+    private func saveCurrentSong() {
+        guard !isApplyingSong else { return }
+        let cleanSequence = Self.cleanSequence(sequence)
+        let song = Song(
+            id: currentSongID,
+            name: Self.cleanSongName(currentSongName),
+            bpm: bpm.clamped(to: 20...300),
+            startMeasureNumber: startMeasureNumber.clamped(to: 0...9999),
+            sequence: cleanSequence,
+            loopRange: PersistedLoopRange(
+                isEnabled: isLoopRangeEnabled,
+                startIndex: loopStartIndex.clamped(to: 0...max(0, cleanSequence.count - 1)),
+                endIndex: loopEndIndex.clamped(to: 0...max(0, cleanSequence.count - 1))
+            ),
+            updatedAt: Date()
+        )
+
+        if let index = songs.firstIndex(where: { $0.id == currentSongID }) {
+            songs[index] = song
+        } else {
+            songs.append(song)
+        }
+        saveSongLibrary()
+    }
+
+    private func saveSongLibrary() {
         do {
-            let composition = PersistedComposition(
-                startMeasureNumber: startMeasureNumber,
-                sequence: sequence,
-                loopRange: PersistedLoopRange(
-                    isEnabled: isLoopRangeEnabled,
-                    startIndex: loopStartIndex,
-                    endIndex: loopEndIndex
-                )
-            )
-            let data = try JSONEncoder().encode(composition)
-            UserDefaults.standard.set(data, forKey: compositionStorageKey)
+            let library = PersistedSongLibrary(currentSongID: currentSongID, songs: songs)
+            let data = try JSONEncoder().encode(library)
+            UserDefaults.standard.set(data, forKey: songLibraryStorageKey)
         } catch {
-            UserDefaults.standard.removeObject(forKey: compositionStorageKey)
+            UserDefaults.standard.removeObject(forKey: songLibraryStorageKey)
         }
     }
 
-    private static func loadComposition(
+    private func applySong(_ song: Song, savePreviousSong: Bool) {
+        if savePreviousSong {
+            saveCurrentSong()
+        }
+        stop()
+
+        isApplyingSong = true
+        currentSongID = song.id
+        currentSongName = Self.cleanSongName(song.name)
+        bpm = song.bpm.clamped(to: 20...300)
+        startMeasureNumber = song.startMeasureNumber.clamped(to: 0...9999)
+        sequence = Self.cleanSequence(song.sequence)
+        isLoopRangeEnabled = song.loopRange?.isEnabled ?? false
+        loopStartIndex = song.loopRange?.startIndex ?? 0
+        loopEndIndex = song.loopRange?.endIndex ?? max(0, sequence.count - 1)
+        normalizeLoopRange()
+        currentMeasureIndex = 0
+        currentBeat = -1
+        loopCount = 1
+        pendulumDirection = 0
+        isApplyingSong = false
+    }
+
+    private static func loadSongLibrary(
+        songLibraryStorageKey: String,
         compositionStorageKey: String,
         legacySequenceStorageKey: String
-    ) -> PersistedComposition {
+    ) -> PersistedSongLibrary {
+        if let data = UserDefaults.standard.data(forKey: songLibraryStorageKey),
+           let decoded = try? JSONDecoder().decode(PersistedSongLibrary.self, from: data) {
+            let songs = cleanSongs(decoded.songs)
+            let currentSongID = songs.contains { $0.id == decoded.currentSongID }
+                ? decoded.currentSongID
+                : songs[0].id
+            return PersistedSongLibrary(currentSongID: currentSongID, songs: songs)
+        }
+
         if let data = UserDefaults.standard.data(forKey: compositionStorageKey),
            let decoded = try? JSONDecoder().decode(PersistedComposition.self, from: data) {
-            return PersistedComposition(
+            let song = Song(
+                name: "Song 1",
+                bpm: 120,
                 startMeasureNumber: decoded.startMeasureNumber.clamped(to: 0...9999),
                 sequence: cleanSequence(decoded.sequence),
                 loopRange: decoded.loopRange
             )
+            return PersistedSongLibrary(currentSongID: song.id, songs: [song])
         }
 
         if let data = UserDefaults.standard.data(forKey: legacySequenceStorageKey),
            let decoded = try? JSONDecoder().decode([TimeSignature].self, from: data) {
-            return PersistedComposition(
+            let song = Song(
+                name: "Song 1",
+                bpm: 120,
                 startMeasureNumber: 1,
                 sequence: cleanSequence(decoded),
                 loopRange: nil
             )
+            return PersistedSongLibrary(currentSongID: song.id, songs: [song])
         }
 
-        return PersistedComposition(startMeasureNumber: 1, sequence: defaultSequence, loopRange: nil)
+        let song = defaultSong(named: "Song 1")
+        return PersistedSongLibrary(currentSongID: song.id, songs: [song])
+    }
+
+    private static func cleanSongs(_ songs: [Song]) -> [Song] {
+        let cleanSongs = songs.enumerated().compactMap { index, song -> Song? in
+            let sequence = cleanSequence(song.sequence)
+            guard !sequence.isEmpty else { return nil }
+            return Song(
+                id: song.id,
+                name: cleanSongName(song.name, fallback: "Song \(index + 1)"),
+                bpm: song.bpm.clamped(to: 20...300),
+                startMeasureNumber: song.startMeasureNumber.clamped(to: 0...9999),
+                sequence: sequence,
+                loopRange: song.loopRange,
+                updatedAt: song.updatedAt
+            )
+        }
+
+        return cleanSongs.isEmpty ? [defaultSong(named: "Song 1")] : cleanSongs
     }
 
     private static func cleanSequence(_ sequence: [TimeSignature]) -> [TimeSignature] {
@@ -469,6 +622,50 @@ final class MetronomeModel: ObservableObject {
         else { return nil }
         return grouping
     }
+
+    private static func cleanSongName(_ name: String, fallback: String = "Untitled Song") -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return fallback
+        }
+        return String(trimmed.prefix(60))
+    }
+
+    private static func defaultSong(named name: String = "Song 1") -> Song {
+        Song(
+            name: name,
+            bpm: 120,
+            startMeasureNumber: 1,
+            sequence: defaultSequence,
+            loopRange: nil
+        )
+    }
+
+    private func nextUntitledSongName() -> String {
+        let existingNames = Set(songs.map(\.name))
+        for number in 1...999 {
+            let name = "Song \(number)"
+            if !existingNames.contains(name) {
+                return name
+            }
+        }
+        return "Song \(songs.count + 1)"
+    }
+
+    private func nextCopyName(for name: String) -> String {
+        let base = "\(Self.cleanSongName(name)) Copy"
+        let existingNames = Set(songs.map(\.name))
+        if !existingNames.contains(base) {
+            return base
+        }
+        for number in 2...999 {
+            let candidate = "\(base) \(number)"
+            if !existingNames.contains(candidate) {
+                return candidate
+            }
+        }
+        return "\(base) \(songs.count + 1)"
+    }
 }
 
 private struct PersistedComposition: Codable {
@@ -477,7 +674,12 @@ private struct PersistedComposition: Codable {
     var loopRange: PersistedLoopRange?
 }
 
-private struct PersistedLoopRange: Codable {
+private struct PersistedSongLibrary: Codable {
+    var currentSongID: UUID
+    var songs: [Song]
+}
+
+struct PersistedLoopRange: Codable, Equatable, Sendable {
     var isEnabled: Bool
     var startIndex: Int
     var endIndex: Int
