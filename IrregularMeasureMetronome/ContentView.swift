@@ -1,18 +1,14 @@
+import Foundation
 import SwiftUI
-
-private enum MeasureEditField: Hashable {
-    case numerator(UUID)
-    case denominator(UUID)
-}
 
 struct ContentView: View {
     @EnvironmentObject private var metronome: MetronomeModel
     @State private var editingMeasureID: UUID?
-    @State private var editNumeratorText = ""
-    @State private var editDenominatorText = ""
-    @State private var invalidEditNumerator = false
-    @State private var invalidEditDenominator = false
-    @FocusState private var focusedMeasureField: MeasureEditField?
+    @State private var editMeasureText = ""
+    @State private var firstMeasureNumberText = ""
+    @State private var invalidEditMeasure = false
+    @FocusState private var isMeasureSignatureFocused: Bool
+    @FocusState private var isFirstMeasureNumberFocused: Bool
 
     private let accent = Color(red: 0.91, green: 1.0, blue: 0.28)
     private let background = Color(red: 0.05, green: 0.05, blue: 0.06)
@@ -39,8 +35,40 @@ struct ContentView: View {
             .padding(.bottom, 24)
         }
         .scrollIndicators(.hidden)
+        .scrollDismissesKeyboard(.interactively)
         .background(background.ignoresSafeArea())
         .preferredColorScheme(.dark)
+        .onAppear {
+            firstMeasureNumberText = "\(metronome.startMeasureNumber)"
+        }
+        .onChange(of: metronome.startMeasureNumber) { _, number in
+            if !isFirstMeasureNumberFocused {
+                firstMeasureNumberText = "\(number)"
+            }
+        }
+        .onChange(of: isFirstMeasureNumberFocused) { _, isFocused in
+            if isFocused {
+                firstMeasureNumberText = "\(metronome.startMeasureNumber)"
+            } else {
+                commitFirstMeasureNumberText()
+            }
+        }
+        .onChange(of: isMeasureSignatureFocused) { _, isFocused in
+            if !isFocused {
+                commitMeasureEdit()
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                if isFirstMeasureNumberFocused || isMeasureSignatureFocused {
+                    Spacer()
+
+                    Button("Done") {
+                        finishKeyboardEditing()
+                    }
+                }
+            }
+        }
     }
 
     private var header: some View {
@@ -287,7 +315,7 @@ struct ContentView: View {
     }
 
     private var measureNumberControls: some View {
-        Stepper(value: $metronome.startMeasureNumber, in: 0...9999) {
+        HStack(spacing: 8) {
             HStack(spacing: 8) {
                 Text("first measure")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
@@ -295,11 +323,31 @@ struct ContentView: View {
                     .foregroundStyle(muted)
                     .textCase(.uppercase)
 
-                Text("\(metronome.startMeasureNumber)")
+                TextField("1", text: $firstMeasureNumberText)
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.trailing)
                     .font(.system(size: 14, weight: .medium, design: .monospaced))
                     .foregroundStyle(.white)
                     .monospacedDigit()
+                    .frame(width: 56, height: 30)
+                    .padding(.horizontal, 8)
+                    .background(background, in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(border, lineWidth: 1))
+                    .accessibilityLabel("First measure number")
+                    .focused($isFirstMeasureNumberFocused)
+                    .onChange(of: firstMeasureNumberText) { _, text in
+                        updateFirstMeasureNumber(from: text)
+                    }
             }
+
+            Spacer()
+
+            Stepper(
+                "First measure number",
+                value: $metronome.startMeasureNumber,
+                in: 0...9999
+            )
+            .labelsHidden()
         }
         .tint(accent)
         .padding(.horizontal, 14)
@@ -545,25 +593,19 @@ struct ContentView: View {
     private func measureSignatureEditor(for measure: TimeSignature) -> some View {
         Group {
             if editingMeasureID == measure.id {
-                HStack(spacing: 4) {
-                    measureField(
-                        text: $editNumeratorText,
-                        invalid: invalidEditNumerator,
-                        focus: .numerator(measure.id)
-                    )
-
-                    Text("/")
-                        .font(.system(size: 18, design: .monospaced))
-                        .foregroundStyle(muted)
-
-                    measureField(
-                        text: $editDenominatorText,
-                        invalid: invalidEditDenominator,
-                        focus: .denominator(measure.id)
-                    )
+                HStack(spacing: 6) {
+                    TextField("7/8", text: $editMeasureText)
+                        .keyboardType(.numbersAndPunctuation)
+                        .multilineTextAlignment(.center)
+                        .font(.system(size: 15, design: .monospaced))
+                        .foregroundStyle(.white)
+                        .frame(width: 58, height: 34)
+                        .background(background, in: RoundedRectangle(cornerRadius: 8))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(invalidEditMeasure ? .red : border, lineWidth: 1))
+                        .focused($isMeasureSignatureFocused)
 
                     Button {
-                        commitMeasureEdit()
+                        finishMeasureEditing()
                     } label: {
                         Image(systemName: "checkmark")
                             .font(.system(size: 11, weight: .bold))
@@ -588,45 +630,61 @@ struct ContentView: View {
                 .accessibilityLabel("Edit time signature \(measure.label)")
             }
         }
-        .onChange(of: focusedMeasureField) { _, field in
-            if field == nil {
-                commitMeasureEdit()
-            }
+    }
+
+    private func finishKeyboardEditing() {
+        if isFirstMeasureNumberFocused {
+            isFirstMeasureNumberFocused = false
+        } else if isMeasureSignatureFocused {
+            finishMeasureEditing()
         }
     }
 
-    private func measureField(
-        text: Binding<String>,
-        invalid: Bool,
-        focus: MeasureEditField
-    ) -> some View {
-        TextField("", text: text)
-            .keyboardType(.numberPad)
-            .multilineTextAlignment(.center)
-            .font(.system(size: 15, design: .monospaced))
-            .foregroundStyle(.white)
-            .frame(width: 28, height: 34)
-            .background(background, in: RoundedRectangle(cornerRadius: 8))
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(invalid ? .red : border, lineWidth: 1))
-            .focused($focusedMeasureField, equals: focus)
+    private func updateFirstMeasureNumber(from text: String) {
+        let digits = text.filter(\.isNumber)
+        if digits != text {
+            firstMeasureNumberText = digits
+            return
+        }
+
+        guard !digits.isEmpty else { return }
+
+        let number = min(Int(digits) ?? metronome.startMeasureNumber, 9999)
+        metronome.startMeasureNumber = number
+        if "\(number)" != digits {
+            firstMeasureNumberText = "\(number)"
+        }
+    }
+
+    private func commitFirstMeasureNumberText() {
+        guard !firstMeasureNumberText.isEmpty else {
+            firstMeasureNumberText = "\(metronome.startMeasureNumber)"
+            return
+        }
+
+        updateFirstMeasureNumber(from: firstMeasureNumberText)
+        firstMeasureNumberText = "\(metronome.startMeasureNumber)"
+    }
+
+    private func finishMeasureEditing() {
+        commitMeasureEdit()
+        if editingMeasureID == nil {
+            isMeasureSignatureFocused = false
+        }
     }
 
     private func beginEditing(_ measure: TimeSignature) {
         editingMeasureID = measure.id
-        editNumeratorText = "\(measure.numerator)"
-        editDenominatorText = "\(measure.denominator)"
-        invalidEditNumerator = false
-        invalidEditDenominator = false
-        focusedMeasureField = .numerator(measure.id)
+        editMeasureText = measure.label
+        invalidEditMeasure = false
+        isMeasureSignatureFocused = true
     }
 
     private func endMeasureEditing() {
         editingMeasureID = nil
-        editNumeratorText = ""
-        editDenominatorText = ""
-        invalidEditNumerator = false
-        invalidEditDenominator = false
-        focusedMeasureField = nil
+        editMeasureText = ""
+        invalidEditMeasure = false
+        isMeasureSignatureFocused = false
     }
 
     private func commitMeasureEdit() {
@@ -636,18 +694,37 @@ struct ContentView: View {
             return
         }
 
-        let numerator = Int(editNumeratorText) ?? 0
-        let denominator = Int(editDenominatorText) ?? 0
-        invalidEditNumerator = !(1...24).contains(numerator)
-        invalidEditDenominator = !(1...64).contains(denominator)
-        guard !invalidEditNumerator, !invalidEditDenominator else {
-            focusedMeasureField = invalidEditNumerator ? .numerator(measure.id) : .denominator(measure.id)
+        guard let signature = parseMeasureSignature(editMeasureText) else {
+            invalidEditMeasure = true
+            isMeasureSignatureFocused = true
             return
         }
 
-        _ = metronome.updateMeasure(measure, numerator: numerator, denominator: denominator)
+        invalidEditMeasure = false
+        _ = metronome.updateMeasure(
+            measure,
+            numerator: signature.numerator,
+            denominator: signature.denominator
+        )
         self.editingMeasureID = nil
-        focusedMeasureField = nil
+        isMeasureSignatureFocused = false
+    }
+
+    private func parseMeasureSignature(_ text: String) -> (numerator: Int, denominator: Int)? {
+        let parts = text
+            .split(separator: "/", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        guard parts.count == 2,
+              let numerator = Int(parts[0]),
+              let denominator = Int(parts[1]),
+              (1...24).contains(numerator),
+              (1...64).contains(denominator)
+        else {
+            return nil
+        }
+
+        return (numerator, denominator)
     }
 
     private func dotFill(for beat: Int) -> Color {

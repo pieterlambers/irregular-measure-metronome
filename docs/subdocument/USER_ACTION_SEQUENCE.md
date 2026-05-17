@@ -151,7 +151,9 @@ sequenceDiagram
 
     rect rgb(35, 35, 40)
         Note over User,Defaults: Change First Measure Number
-        User->>View: Adjust first measure stepper
+        User->>View: Enter first measure number or adjust stepper
+        View->>View: allow empty in-progress text and strip non-digits
+        User->>View: Tap keyboard Done or move focus away
         View->>Model: startMeasureNumber = new value
         Model->>Model: clamp startMeasureNumber to 0...9999
         Model->>Defaults: save encoded song library
@@ -187,10 +189,11 @@ sequenceDiagram
         end
         Model-->>View: publish updated sequence
         View->>View: open inline editor for inserted measure
-        User->>View: Edit numerator or denominator in the row
-        View->>View: validate numerator 1...24 and denominator 1...64
+        User->>View: Enter time signature text such as 7/8
+        User->>View: Tap row checkmark, keyboard Done, or move focus away
+        View->>View: parse numerator/denominator and validate ranges 1...24 / 1...64
         alt Inputs are invalid
-            View->>View: mark invalid inline fields
+            View->>View: mark inline time signature field invalid
         else Inputs are valid
             View->>Model: updateMeasure(measure, numerator, denominator)
             Model->>Model: update TimeSignature and clean invalid grouping
