@@ -3,15 +3,15 @@
 ## Responsibilities
 
 - Acts as the source of truth for metronome state.
-- Publishes UI state including `songs`, `currentSongID`, `currentSongName`, `bpm`, `isPlaying`, `currentBeat`, `currentMeasureIndex`, `loopCount`, `sequence`, `startMeasureNumber`, `isLoopRangeEnabled`, loop boundary indices, `tapTempoText`, `flashBPM`, and `pendulumDirection`.
+- Publishes UI state including `songs`, `currentSongID`, `currentSongName`, `bpm`, `isPlaying`, `currentBeat`, `currentMeasureIndex`, `loopCount`, `isCountingIn`, `isCountInFourFourEnabled`, `sequence`, `startMeasureNumber`, `isLoopRangeEnabled`, loop boundary indices, `tapTempoText`, `flashBPM`, and `pendulumDirection`.
 - Manages the local song library, including selecting songs, creating default songs, duplicating the current song, deleting the current song when another song exists, and renaming the current song.
-- Starts playback by resetting published playback counters and asking `ClickEngine` to start buffered scheduling.
+- Starts playback by resetting published playback counters and asking `ClickEngine` to start buffered scheduling, with a four-beat 4/4 count-in when enabled.
 - Stops playback by incrementing `playbackGeneration`, stopping `ClickEngine`, cancelling flash timing, and resetting transient playback indicators.
 - Receives scheduled beat callbacks from `ClickEngine`.
 - Filters stale beat callbacks with `playbackGeneration`.
-- Publishes the current beat, measure, loop count, flash state, and pendulum direction in response to current beat callbacks.
+- Publishes the current beat, measure, loop count, count-in state, flash state, and pendulum direction in response to current beat callbacks.
 - Restarts buffered playback from the current position when BPM changes during playback.
-- Persists BPM as part of the current song.
+- Persists BPM and the 4/4 count-in setting as part of the current song.
 - Manages tap tempo timing, averaging, BPM clamping, and tap reset behavior.
 - Derives displayed measure numbers from `startMeasureNumber + sequence index`.
 - Maps displayed loop range measure numbers to sequence indices and passes the active inclusive range to `ClickEngine`.

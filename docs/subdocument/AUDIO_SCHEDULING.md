@@ -10,10 +10,12 @@ This document describes the buffered audio scheduling behavior in the latest com
 
 ## Playback Start
 
-1. `MetronomeModel.start()` resets `currentBeat`, `currentMeasureIndex`, `loopCount`, and `pendulumDirection`.
+1. `MetronomeModel.start()` resets `currentBeat`, `currentMeasureIndex`, `loopCount`, `isCountingIn`, and `pendulumDirection`.
 2. `MetronomeModel.startPlayback(measureIndex:beat:loopCount:)` increments `playbackGeneration`.
-3. `MetronomeModel` calls `ClickEngine.start(...)` with the current BPM, sequence, starting position, loop count, and an `onBeat` callback.
+3. `MetronomeModel` calls `ClickEngine.start(...)` with the current BPM, sequence, starting position, loop count, optional four-beat 4/4 count-in, and an `onBeat` callback.
 4. `ClickEngine.start(...)` prepares the audio engine, cancels any previous scheduler, creates a new scheduling generation, normalizes the starting playback state, restarts the player node, and fills the initial audio queue.
+
+When the 4/4 count-in is enabled, `ClickEngine` schedules four quarter-note count-in beats at the current BPM before the first real beat. The count-in is anchored to the active loop start, so playback begins at the loop start after beat 4 of the count-in.
 
 ## Buffered Queue
 
@@ -21,6 +23,7 @@ This document describes the buffered audio scheduling behavior in the latest com
 - It keeps up to `maxQueuedBeats` buffered beats, currently `12`.
 - Each beat is scheduled as a click buffer followed by a silence buffer.
 - The click buffer is accented when the scheduled beat is `0`, subaccented when the beat starts a configured measure grouping, and regular otherwise.
+- Count-in beats use a 4/4 quarter-note interval regardless of the starting measure's time signature.
 - In `x/8` measures, non-accented eighth-note positions are scheduled as silence so only the downbeat and configured grouping starts are heard.
 - Silence buffer length is calculated from the current BPM and the current measure denominator:
 
@@ -40,6 +43,7 @@ This callback is used for UI state, not for audio playback. When it fires, `Metr
 - ignores stale callbacks by checking `playbackGeneration`;
 - ignores callbacks when playback is stopped;
 - updates `currentMeasureIndex`, `currentBeat`, and `loopCount`;
+- updates `isCountingIn` while count-in beats are being reflected in the UI;
 - triggers the short BPM flash;
 - flips `pendulumDirection`.
 

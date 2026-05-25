@@ -267,37 +267,58 @@ struct ContentView: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 10) {
-            Button {
-                metronome.togglePlayback()
-            } label: {
-                Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(background)
-                    .frame(maxWidth: .infinity, minHeight: 60)
-                    .contentShape(Rectangle())
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                Button {
+                    metronome.togglePlayback()
+                } label: {
+                    Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(background)
+                        .frame(maxWidth: .infinity, minHeight: 60)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .background(accent, in: RoundedRectangle(cornerRadius: 16))
+
+                Button {
+                    metronome.tapTempo()
+                } label: {
+                    VStack(spacing: 2) {
+                        Text(metronome.tapTempoText)
+                            .font(.system(size: 18, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.white)
+
+                        Text("TEMPO")
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .tracking(1.1)
+                            .foregroundStyle(muted)
+                    }
+                    .frame(width: 96, height: 60)
+                }
+                .buttonStyle(.plain)
+                .background(surface, in: RoundedRectangle(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(border, lineWidth: 1))
             }
-            .buttonStyle(.plain)
-            .background(accent, in: RoundedRectangle(cornerRadius: 16))
 
-            Button {
-                metronome.tapTempo()
-            } label: {
-                VStack(spacing: 2) {
-                    Text(metronome.tapTempoText)
-                        .font(.system(size: 18, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.white)
+            Toggle(isOn: $metronome.isCountInFourFourEnabled) {
+                HStack(spacing: 8) {
+                    Image(systemName: "metronome")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(accent)
 
-                    Text("TEMPO")
+                    Text("count-in 4/4")
                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                         .tracking(1.1)
                         .foregroundStyle(muted)
+                        .textCase(.uppercase)
                 }
-                .frame(width: 96, height: 60)
             }
-            .buttonStyle(.plain)
-            .background(surface, in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(border, lineWidth: 1))
+            .tint(accent)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(metronome.isCountInFourFourEnabled ? accent.opacity(0.55) : border, lineWidth: 1))
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 14)
@@ -749,6 +770,7 @@ struct ContentView: View {
 
     private func miniDotFill(measureIndex index: Int, measure: TimeSignature, beat: Int) -> Color {
         guard metronome.isPlaying,
+              !metronome.isCountingIn,
               index == metronome.currentMeasureIndex,
               beat == metronome.currentBeat
         else {

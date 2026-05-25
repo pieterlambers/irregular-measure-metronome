@@ -78,11 +78,16 @@ sequenceDiagram
         User->>View: Tap play button
         View->>Model: togglePlayback()
         Model->>Model: start()
-        Model->>Model: reset currentBeat, currentMeasureIndex, loopCount
+        Model->>Model: reset currentBeat, currentMeasureIndex, loopCount, isCountingIn
         Model->>Model: increment playbackGeneration
-        Model->>Engine: start(bpm, sequence, position, active loop range, onBeat)
+        Model->>Engine: start(bpm, sequence, position, active loop range, loop count, optional 4/4 count-in, onBeat)
         Engine->>Engine: prepare audio engine, player, and accented/subaccented/regular click buffers
         Engine->>Queue: stop previous scheduler and create generation
+        opt 4/4 count-in enabled
+            Queue->>Engine: schedule four quarter-note count-in beats from active loop start
+            Engine-->>Model: onBeat(loopStartIndex, count-in beat, loopCount, isCountIn)
+            Model->>Model: publish isCountingIn and count-in beat
+        end
         Queue->>Queue: fill buffered queue up to maxQueuedBeats
         Queue->>Engine: schedule click buffer and silence buffer per beat
         Queue->>Queue: refill every 100 ms while generation is current

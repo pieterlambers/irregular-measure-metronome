@@ -56,7 +56,8 @@ final class ClickEngine {
         loopStartIndex: Int,
         loopEndIndex: Int,
         loopCount: Int,
-        onBeat: @escaping (Int, Int, Int) -> Void
+        countInBeats: Int,
+        onBeat: @escaping (Int, Int, Int, Bool) -> Void
     ) {
         guard !sequence.isEmpty else { return }
         prepare()
@@ -79,6 +80,7 @@ final class ClickEngine {
                 loopStartIndex: activeLoopStart,
                 loopEndIndex: activeLoopEnd,
                 loopCount: max(1, loopCount),
+                countInBeatsRemaining: max(0, countInBeats),
                 onBeat: onBeat
             )
 
@@ -131,15 +133,20 @@ final class ClickEngine {
         else { return }
 
         let measure = state.sequence[state.measureIndex]
-        let intervalSeconds = (60 / Double(state.bpm)) * (4 / Double(measure.denominator))
+        let isCountIn = state.isCountingIn
+        let denominator = isCountIn ? 4 : measure.denominator
+        let intervalSeconds = (60 / Double(state.bpm)) * (4 / Double(denominator))
         let intervalFrames = AVAudioFrameCount(max(1, (intervalSeconds * format.sampleRate).rounded()))
-        let isMainAccent = state.beat == 0 || measure.isSubaccented(beat: state.beat)
+        let scheduledBeat = isCountIn ? state.countInBeat : state.beat
+        let isMainAccent = scheduledBeat == 0 || (!isCountIn && measure.isSubaccented(beat: scheduledBeat))
         let clickBuffer: AVAudioPCMBuffer?
-        if state.beat == 0 {
+        if scheduledBeat == 0 {
             clickBuffer = accentedBuffer
+        } else if isCountIn {
+            clickBuffer = regularBuffer
         } else if measure.denominator == 8 {
             clickBuffer = isMainAccent ? subaccentedBuffer : nil
-        } else if measure.isSubaccented(beat: state.beat) {
+        } else if measure.isSubaccented(beat: scheduledBeat) {
             clickBuffer = subaccentedBuffer
         } else {
             clickBuffer = regularBuffer
@@ -147,7 +154,7 @@ final class ClickEngine {
         let silenceFrameCount = max(1, intervalFrames - (clickBuffer?.frameLength ?? 0))
         let silenceBuffer = silenceBuffer(frameCount: silenceFrameCount, format: format)
         let beatMeasureIndex = state.measureIndex
-        let beat = state.beat
+        let beat = scheduledBeat
         let beatLoopCount = state.loopCount
         let onBeat = state.onBeat
         let callbackDeadline = callbackStartTime + .nanoseconds(Int(nextCallbackOffset * 1_000_000_000))
@@ -167,7 +174,7 @@ final class ClickEngine {
             self?.schedulerQueue.async { [weak self] in
                 guard let self, generation == self.scheduleGeneration else { return }
                 DispatchQueue.main.async {
-                    onBeat(beatMeasureIndex, beat, beatLoopCount)
+                    onBeat(beatMeasureIndex, beat, beatLoopCount, isCountIn)
                 }
             }
         }
@@ -218,11 +225,18 @@ private struct PlaybackState {
     let loopStartIndex: Int
     let loopEndIndex: Int
     var loopCount: Int
-    let onBeat: (Int, Int, Int) -> Void
+    var countInBeatsRemaining: Int
+    var countInBeat = 0
+    let onBeat: (Int, Int, Int, Bool) -> Void
+
+    var isCountingIn: Bool {
+        countInBeatsRemaining > 0
+    }
 
     func normalized() -> PlaybackState {
         var copy = self
         copy.measureIndex = copy.measureIndex.clamped(to: copy.loopStartIndex...copy.loopEndIndex)
+        copy.countInBeat = 0
         let measure = copy.sequence[copy.measureIndex]
         if copy.beat >= measure.numerator {
             copy.beat = 0
@@ -231,6 +245,12 @@ private struct PlaybackState {
     }
 
     mutating func advancePastCurrentBeat() {
+        if countInBeatsRemaining > 0 {
+            countInBeatsRemaining -= 1
+            countInBeat = countInBeatsRemaining > 0 ? countInBeat + 1 : 0
+            return
+        }
+
         let measure = sequence[measureIndex]
         beat += 1
         if beat >= measure.numerator {

@@ -6,9 +6,9 @@
 - Prepares `AVAudioEngine`, `AVAudioPlayerNode`, and click buffers.
 - Configures playback audio session behavior.
 - Generates separate accented, subaccented, and regular click buffers.
-- Starts buffered playback for a BPM, measure sequence, starting beat, starting measure, inclusive loop range, and loop count.
+- Starts buffered playback for a BPM, measure sequence, starting beat, starting measure, inclusive loop range, loop count, and optional count-in beats.
 - Schedules each beat as a click buffer followed by a calculated silence buffer, using subaccent clicks for configured grouping starts.
-- Calculates beat intervals from BPM and each measure denominator.
+- Calculates beat intervals from BPM and each measure denominator, or quarter-note intervals for 4/4 count-in beats.
 - Wraps playback at the active loop range end rather than always at the full sequence end.
 - Maintains a private serial scheduler queue and `DispatchSourceTimer` to keep the audio queue filled.
 - Caps the buffered queue at `maxQueuedBeats`, currently `12`.

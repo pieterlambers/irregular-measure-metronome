@@ -17,16 +17,16 @@ flowchart TD
     A -->|"injects via .environmentObject"| C["ContentView<br/>SwiftUI View"]
 
     C -->|"reads state"| B
-    C -->|"user actions:<br/>song select/name/create/duplicate/delete,<br/>play/pause, tap tempo,<br/>BPM slider, start measure,<br/>loop range,<br/>insert/delete measure,<br/>grouping picker"| B
+    C -->|"user actions:<br/>song select/name/create/duplicate/delete,<br/>play/pause, count-in toggle, tap tempo,<br/>BPM slider, start measure,<br/>loop range,<br/>insert/delete measure,<br/>grouping picker"| B
 
-    B -->|"publishes UI state:<br/>songs, currentSongID, currentSongName,<br/>bpm, isPlaying, currentBeat,<br/>currentMeasureIndex, loopCount,<br/>flashBPM, pendulumDirection,<br/>sequence, startMeasureNumber,<br/>loop range, tapTempoText"| C
+    B -->|"publishes UI state:<br/>songs, currentSongID, currentSongName,<br/>bpm, isPlaying, currentBeat,<br/>currentMeasureIndex, loopCount,<br/>isCountingIn, flashBPM, pendulumDirection,<br/>sequence, startMeasureNumber,<br/>loop range, count-in setting, tapTempoText"| C
 
     B -->|"starts/stops buffered playback<br/>and receives beat callbacks"| D["ClickEngine"]
     D -->|"AVAudioEngine + AVAudioPlayerNode<br/>queued click + silence buffers"| E["Audio Output"]
     D -->|"scheduler queue + DispatchSourceTimer<br/>keeps audio queue filled"| K["Buffered Beat Queue"]
     D -->|"onBeat callback on main queue"| B
 
-    B -->|"stores"| F["Song[]<br/>name, bpm, sequence,<br/>start measure, loop range"]
+    B -->|"stores"| F["Song[]<br/>name, bpm, sequence,<br/>start measure, loop range,<br/>count-in setting"]
     F -->|"sequence elements are"| G["TimeSignature<br/>id, numerator, denominator,<br/>optional grouping, label"]
     B -->|"derives display numbers from"| L["startMeasureNumber + sequence index"]
 
@@ -50,7 +50,7 @@ flowchart TD
 
 - Use the participant links above for reliable navigation. Some Markdown previews disable clickable Mermaid nodes.
 - `IrregularMeasureMetronomeApp` creates a single shared `MetronomeModel` and injects it into the SwiftUI environment.
-- `ContentView` is the only UI surface in this project and drives all user interaction, including song library controls, playback controls, tap tempo, start measure number, loop range selection, measure editing, grouping selection, and beat visualization.
+- `ContentView` is the only UI surface in this project and drives all user interaction, including song library controls, playback controls, count-in selection, tap tempo, start measure number, loop range selection, measure editing, grouping selection, and beat visualization.
 - `MetronomeModel` owns published song-library state, playback state, playback lifecycle, tap tempo, sequence management, grouping validation, loop range mapping, consecutive measure numbering, persistence, and stale-callback filtering.
 - `ClickEngine` owns accented, subaccented, and regular audio generation, buffered beat scheduling, silence-buffer caching, and audio-to-model beat callbacks.
 - `Task.sleep` is not the beat-loop scheduler; it handles short UI delays for BPM flashing and tap-tempo reset.

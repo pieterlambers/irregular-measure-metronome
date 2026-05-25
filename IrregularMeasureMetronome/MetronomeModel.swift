@@ -44,6 +44,7 @@ struct Song: Identifiable, Codable, Equatable, Sendable {
     var startMeasureNumber: Int
     var sequence: [TimeSignature]
     var loopRange: PersistedLoopRange?
+    var countInFourFourEnabled: Bool?
     var updatedAt: Date = Date()
 }
 
@@ -91,6 +92,14 @@ final class MetronomeModel: ObservableObject {
     @Published private(set) var currentMeasureIndex = 0
     @Published private(set) var currentBeat = -1
     @Published private(set) var loopCount = 1
+    @Published private(set) var isCountingIn = false
+    @Published var isCountInFourFourEnabled = false {
+        didSet {
+            guard oldValue != isCountInFourFourEnabled else { return }
+            saveCurrentSong()
+            restartPlaybackAtLoopStartIfNeeded()
+        }
+    }
     @Published var isLoopRangeEnabled = false {
         didSet {
             guard oldValue != isLoopRangeEnabled else { return }
@@ -172,6 +181,9 @@ final class MetronomeModel: ObservableObject {
     }
 
     var currentMeasure: TimeSignature {
+        if isCountingIn {
+            return TimeSignature(numerator: 4, denominator: 4)
+        }
         guard sequence.indices.contains(currentMeasureIndex) else {
             return TimeSignature(numerator: 4, denominator: 4)
         }
@@ -279,8 +291,14 @@ final class MetronomeModel: ObservableObject {
         currentBeat = -1
         currentMeasureIndex = activeLoopStartIndex
         loopCount = 1
+        isCountingIn = false
         pendulumDirection = 0
-        startPlayback(measureIndex: activeLoopStartIndex, beat: 0, loopCount: 1)
+        startPlayback(
+            measureIndex: activeLoopStartIndex,
+            beat: 0,
+            loopCount: 1,
+            includeCountIn: isCountInFourFourEnabled
+        )
     }
 
     func stop() {
@@ -290,6 +308,7 @@ final class MetronomeModel: ObservableObject {
         flashTask?.cancel()
         flashBPM = false
         currentBeat = -1
+        isCountingIn = false
         pendulumDirection = 0
     }
 
@@ -390,7 +409,12 @@ final class MetronomeModel: ObservableObject {
         }
     }
 
-    private func startPlayback(measureIndex: Int, beat: Int, loopCount: Int) {
+    private func startPlayback(
+        measureIndex: Int,
+        beat: Int,
+        loopCount: Int,
+        includeCountIn: Bool = false
+    ) {
         playbackGeneration += 1
         let generation = playbackGeneration
         clickEngine.start(
@@ -400,13 +424,15 @@ final class MetronomeModel: ObservableObject {
             startBeat: beat,
             loopStartIndex: activeLoopStartIndex,
             loopEndIndex: activeLoopEndIndex,
-            loopCount: loopCount
-        ) { [weak self] measureIndex, beat, loopCount in
+            loopCount: loopCount,
+            countInBeats: includeCountIn ? 4 : 0
+        ) { [weak self] measureIndex, beat, loopCount, isCountIn in
             Task { @MainActor [weak self] in
                 self?.showScheduledBeat(
                     measureIndex: measureIndex,
                     beat: beat,
                     loopCount: loopCount,
+                    isCountIn: isCountIn,
                     generation: generation
                 )
             }
@@ -414,8 +440,23 @@ final class MetronomeModel: ObservableObject {
     }
 
     private func restartPlaybackFromCurrentPosition() {
+        if isCountingIn {
+            currentBeat = -1
+            currentMeasureIndex = activeLoopStartIndex
+            loopCount = 1
+            isCountingIn = false
+            startPlayback(
+                measureIndex: activeLoopStartIndex,
+                beat: 0,
+                loopCount: 1,
+                includeCountIn: isCountInFourFourEnabled
+            )
+            return
+        }
+
         let beat = max(0, currentBeat)
         let measureIndex = currentMeasureIndex.clamped(to: activeLoopStartIndex...activeLoopEndIndex)
+        isCountingIn = false
         startPlayback(measureIndex: measureIndex, beat: beat, loopCount: loopCount)
     }
 
@@ -434,8 +475,14 @@ final class MetronomeModel: ObservableObject {
         currentBeat = -1
         currentMeasureIndex = activeLoopStartIndex
         loopCount = 1
+        isCountingIn = false
         pendulumDirection = 0
-        startPlayback(measureIndex: activeLoopStartIndex, beat: 0, loopCount: 1)
+        startPlayback(
+            measureIndex: activeLoopStartIndex,
+            beat: 0,
+            loopCount: 1,
+            includeCountIn: isCountInFourFourEnabled
+        )
     }
 
     private func index(forMeasureNumber measureNumber: Int) -> Int {
@@ -457,7 +504,13 @@ final class MetronomeModel: ObservableObject {
         }
     }
 
-    private func showScheduledBeat(measureIndex: Int, beat: Int, loopCount: Int, generation: Int) {
+    private func showScheduledBeat(
+        measureIndex: Int,
+        beat: Int,
+        loopCount: Int,
+        isCountIn: Bool,
+        generation: Int
+    ) {
         guard isPlaying,
               generation == playbackGeneration,
               sequence.indices.contains(measureIndex)
@@ -465,6 +518,7 @@ final class MetronomeModel: ObservableObject {
         currentMeasureIndex = measureIndex
         currentBeat = beat
         self.loopCount = loopCount
+        isCountingIn = isCountIn
         flash()
         pendulumDirection = pendulumDirection == 0 ? 1 : -pendulumDirection
     }
@@ -495,6 +549,7 @@ final class MetronomeModel: ObservableObject {
                 startIndex: loopStartIndex.clamped(to: 0...max(0, cleanSequence.count - 1)),
                 endIndex: loopEndIndex.clamped(to: 0...max(0, cleanSequence.count - 1))
             ),
+            countInFourFourEnabled: isCountInFourFourEnabled,
             updatedAt: Date()
         )
 
@@ -528,6 +583,7 @@ final class MetronomeModel: ObservableObject {
         bpm = song.bpm.clamped(to: 20...300)
         startMeasureNumber = song.startMeasureNumber.clamped(to: 0...9999)
         sequence = Self.cleanSequence(song.sequence)
+        isCountInFourFourEnabled = song.countInFourFourEnabled ?? false
         isLoopRangeEnabled = song.loopRange?.isEnabled ?? false
         loopStartIndex = song.loopRange?.startIndex ?? 0
         loopEndIndex = song.loopRange?.endIndex ?? max(0, sequence.count - 1)
@@ -535,6 +591,7 @@ final class MetronomeModel: ObservableObject {
         currentMeasureIndex = 0
         currentBeat = -1
         loopCount = 1
+        isCountingIn = false
         pendulumDirection = 0
         isApplyingSong = false
     }
@@ -560,7 +617,8 @@ final class MetronomeModel: ObservableObject {
                 bpm: 120,
                 startMeasureNumber: decoded.startMeasureNumber.clamped(to: 0...9999),
                 sequence: cleanSequence(decoded.sequence),
-                loopRange: decoded.loopRange
+                loopRange: decoded.loopRange,
+                countInFourFourEnabled: false
             )
             return PersistedSongLibrary(currentSongID: song.id, songs: [song])
         }
@@ -572,7 +630,8 @@ final class MetronomeModel: ObservableObject {
                 bpm: 120,
                 startMeasureNumber: 1,
                 sequence: cleanSequence(decoded),
-                loopRange: nil
+                loopRange: nil,
+                countInFourFourEnabled: false
             )
             return PersistedSongLibrary(currentSongID: song.id, songs: [song])
         }
@@ -592,6 +651,7 @@ final class MetronomeModel: ObservableObject {
                 startMeasureNumber: song.startMeasureNumber.clamped(to: 0...9999),
                 sequence: sequence,
                 loopRange: song.loopRange,
+                countInFourFourEnabled: song.countInFourFourEnabled ?? false,
                 updatedAt: song.updatedAt
             )
         }
@@ -637,7 +697,8 @@ final class MetronomeModel: ObservableObject {
             bpm: 120,
             startMeasureNumber: 1,
             sequence: defaultSequence,
-            loopRange: nil
+            loopRange: nil,
+            countInFourFourEnabled: false
         )
     }
 

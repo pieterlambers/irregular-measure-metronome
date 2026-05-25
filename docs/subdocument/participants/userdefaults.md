@@ -2,7 +2,7 @@
 
 ## Responsibilities
 
-- Stores the encoded local song library under `metro.songLibrary.v1`, including the current song ID and each song's name, BPM, `startMeasureNumber`, measure sequence, optional per-measure grouping arrays, optional loop range settings, and update timestamp.
+- Stores the encoded local song library under `metro.songLibrary.v1`, including the current song ID and each song's name, BPM, `startMeasureNumber`, measure sequence, optional per-measure grouping arrays, optional loop range settings, 4/4 count-in setting, and update timestamp.
 - Provides saved song library data during `MetronomeModel` initialization.
 - Allows `MetronomeModel` to migrate the previous single-composition payload from `metro.composition.v2`.
 - Allows `MetronomeModel` to migrate legacy encoded measure sequences from `metro.sequence.v1`.

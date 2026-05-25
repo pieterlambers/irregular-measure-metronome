@@ -4,6 +4,7 @@
 
 - Initiates all user-facing actions through the SwiftUI interface.
 - Starts and pauses playback with the play/pause control.
+- Enables or disables the 4/4 count-in before playback.
 - Changes tempo directly with the BPM slider.
 - Sets tempo by tapping the TEMPO button repeatedly.
 - Types or steps the first displayed measure number.

@@ -4,11 +4,12 @@
 
 - Renders the complete SwiftUI interface for the metronome.
 - Reads published state from `MetronomeModel` through the environment object.
-- Displays song selection and naming controls, tempo, tempo name, beat dots, pendulum state, playback controls, sequence rows, grouping pickers, inline measure editors, start measure number, loop range controls, and loop count.
-- Converts UI events into model calls: `selectSong(_:)`, `createSong()`, `duplicateCurrentSong()`, `deleteCurrentSong()`, `togglePlayback()`, `tapTempo()`, `duplicateMeasure(at:)`, `updateMeasure(_:numerator:denominator:)`, `updateGrouping(for:grouping:)`, `updateLoopStartMeasureNumber(_:)`, `updateLoopEndMeasureNumber(_:)`, and `deleteMeasure(_:)`.
+- Displays song selection and naming controls, tempo, tempo name, beat dots, pendulum state, playback controls, count-in control, sequence rows, grouping pickers, inline measure editors, start measure number, loop range controls, and loop count.
+- Converts UI events into model calls and bindings: `selectSong(_:)`, `createSong()`, `duplicateCurrentSong()`, `deleteCurrentSong()`, `togglePlayback()`, `isCountInFourFourEnabled`, `tapTempo()`, `duplicateMeasure(at:)`, `updateMeasure(_:numerator:denominator:)`, `updateGrouping(for:grouping:)`, `updateLoopStartMeasureNumber(_:)`, `updateLoopEndMeasureNumber(_:)`, and `deleteMeasure(_:)`.
 - Validates inline measure editor text before forwarding measure updates.
 - Tracks local editing state for the selected measure signature text, first measure number text, keyboard focus, and validation errors.
 - Lets the user edit the current song name, switch songs from a menu, create a default song, duplicate the current song, and delete the current song when at least one other song exists.
+- Lets the user enable a four-beat 4/4 count-in before playback starts from the active loop start.
 - Lets the user type or step the first displayed measure number while keeping all rows consecutive.
 - Lets the user enable a loop range and set inclusive `from` / `to` measure numbers.
 - Lets the user insert a measure at any sequence boundary by copying the local context: before the first row copies the first measure, and other boundaries copy the previous measure.
