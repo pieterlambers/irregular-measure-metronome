@@ -133,15 +133,18 @@ final class ClickEngine {
         let measure = state.sequence[state.measureIndex]
         let intervalSeconds = (60 / Double(state.bpm)) * (4 / Double(measure.denominator))
         let intervalFrames = AVAudioFrameCount(max(1, (intervalSeconds * format.sampleRate).rounded()))
-        let clickBuffer: AVAudioPCMBuffer
+        let isMainAccent = state.beat == 0 || measure.isSubaccented(beat: state.beat)
+        let clickBuffer: AVAudioPCMBuffer?
         if state.beat == 0 {
             clickBuffer = accentedBuffer
+        } else if measure.denominator == 8 {
+            clickBuffer = isMainAccent ? subaccentedBuffer : nil
         } else if measure.isSubaccented(beat: state.beat) {
             clickBuffer = subaccentedBuffer
         } else {
             clickBuffer = regularBuffer
         }
-        let silenceFrameCount = max(1, intervalFrames - clickBuffer.frameLength)
+        let silenceFrameCount = max(1, intervalFrames - (clickBuffer?.frameLength ?? 0))
         let silenceBuffer = silenceBuffer(frameCount: silenceFrameCount, format: format)
         let beatMeasureIndex = state.measureIndex
         let beat = state.beat
@@ -150,7 +153,9 @@ final class ClickEngine {
         let callbackDeadline = callbackStartTime + .nanoseconds(Int(nextCallbackOffset * 1_000_000_000))
 
         pendingScheduledBeats += 1
-        player.scheduleBuffer(clickBuffer, at: nil, options: [], completionHandler: nil)
+        if let clickBuffer {
+            player.scheduleBuffer(clickBuffer, at: nil, options: [], completionHandler: nil)
+        }
         player.scheduleBuffer(silenceBuffer, at: nil, options: []) { [weak self] in
             self?.schedulerQueue.async { [weak self] in
                 guard let self, generation == self.scheduleGeneration else { return }

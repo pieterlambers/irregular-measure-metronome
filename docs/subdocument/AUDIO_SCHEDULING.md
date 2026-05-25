@@ -21,6 +21,7 @@ This document describes the buffered audio scheduling behavior in the latest com
 - It keeps up to `maxQueuedBeats` buffered beats, currently `12`.
 - Each beat is scheduled as a click buffer followed by a silence buffer.
 - The click buffer is accented when the scheduled beat is `0`, subaccented when the beat starts a configured measure grouping, and regular otherwise.
+- In `x/8` measures, non-accented eighth-note positions are scheduled as silence so only the downbeat and configured grouping starts are heard.
 - Silence buffer length is calculated from the current BPM and the current measure denominator:
 
 ```swift
