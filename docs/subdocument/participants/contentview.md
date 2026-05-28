@@ -4,6 +4,8 @@
 
 - Renders the complete SwiftUI interface for the metronome.
 - Reads published state from `MetronomeModel` through the environment object.
+- Switches between the compact single-column layout and the regular-width iPad layout based on `horizontalSizeClass`.
+- On regular-width screens, keeps song, tempo, beat visualization, and transport controls in a left column while rendering the sequence editor as a two-column measure grid in the wider right column.
 - Displays song selection and naming controls, tempo, tempo name, beat dots, pendulum state, playback controls, count-in control, sequence rows, grouping pickers, inline measure editors, start measure number, loop range controls, and loop count.
 - Converts UI events into model calls and bindings: `selectSong(_:)`, `createSong()`, `duplicateCurrentSong()`, `deleteCurrentSong()`, `togglePlayback()`, `isCountInFourFourEnabled`, `tapTempo()`, `duplicateMeasure(at:)`, `updateMeasure(_:numerator:denominator:)`, `updateGrouping(for:grouping:)`, `updateLoopStartMeasureNumber(_:)`, `updateLoopEndMeasureNumber(_:)`, and `deleteMeasure(_:)`.
 - Validates inline measure editor text before forwarding measure updates.
@@ -23,5 +25,6 @@
 ## Future Change Notes
 
 - Keep this view focused on presentation, local input state, and forwarding user intent.
+- Keep compact and regular-width layouts behaviorally equivalent when changing controls.
 - Move shared business rules into `MetronomeModel` when they affect playback, persistence, or sequence state.
 - Update `USER_ACTION_SEQUENCE.md` when adding or removing user actions from this view.

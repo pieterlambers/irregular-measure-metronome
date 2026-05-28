@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var metronome: MetronomeModel
     @State private var editingMeasureID: UUID?
     @State private var editMeasureText = ""
@@ -17,25 +18,13 @@ struct ContentView: View {
     private let muted = Color(red: 0.45, green: 0.45, blue: 0.49)
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                header
-                songControls
-                tempo
-                slider
-                beatDots
-                pendulum
-                controls
-                sequenceHeader
-                measureNumberControls
-                loopRangeControls
-                sequenceList
-                loopIndicator
+        Group {
+            if horizontalSizeClass == .regular {
+                regularWidthLayout
+            } else {
+                compactLayout
             }
-            .padding(.bottom, 24)
         }
-        .scrollIndicators(.hidden)
-        .scrollDismissesKeyboard(.interactively)
         .background(background.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .onAppear {
@@ -69,6 +58,63 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    private var compactLayout: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                header
+                songControls
+                tempo
+                slider
+                beatDots
+                pendulum
+                controls
+                sequenceHeader
+                measureNumberControls
+                loopRangeControls
+                sequenceList
+                loopIndicator
+            }
+            .padding(.bottom, 24)
+        }
+        .scrollIndicators(.hidden)
+        .scrollDismissesKeyboard(.interactively)
+    }
+
+    private var regularWidthLayout: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                header
+
+                HStack(alignment: .top, spacing: 24) {
+                    VStack(spacing: 0) {
+                        songControls
+                        tempo
+                        slider
+                        beatDots
+                        pendulum
+                        controls
+                        loopIndicator
+                    }
+                    .frame(width: 320)
+
+                    VStack(spacing: 0) {
+                        sequenceHeader
+                        measureNumberControls
+                        loopRangeControls
+                        sequenceGrid
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.horizontal, 12)
+            }
+            .frame(maxWidth: 1180)
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 28)
+        }
+        .scrollIndicators(.hidden)
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var header: some View {
@@ -454,62 +500,91 @@ struct ContentView: View {
             insertionControl(at: 0)
 
             ForEach(Array(metronome.sequence.enumerated()), id: \.element.id) { index, measure in
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 10) {
-                        measureNumberLabel(forIndex: index)
-
-                        measureSignatureEditor(for: measure)
-
-                        groupingMenu(for: measure)
-
-                        Spacer(minLength: 0)
-
-                        Button {
-                            metronome.deleteMeasure(measure)
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(muted)
-                                .frame(width: 32, height: 32)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(metronome.sequence.count <= 1)
-                        .opacity(metronome.sequence.count <= 1 ? 0.35 : 1)
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(border, lineWidth: 1))
-                    }
-
-                    FlowLayout(spacing: 5, lineSpacing: 5) {
-                        ForEach(0..<measure.numerator, id: \.self) { beat in
-                            Circle()
-                                .fill(miniDotFill(measureIndex: index, measure: measure, beat: beat))
-                                .stroke(miniDotStroke(measure: measure, beat: beat), lineWidth: 1)
-                                .frame(width: 11, height: 11)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .background(surface, in: RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(index == metronome.currentMeasureIndex && metronome.isPlaying ? accent : border, lineWidth: 1.5)
-                )
-                .overlay(alignment: .leading) {
-                    if metronome.isMeasureInActiveLoop(index: index) {
-                        Rectangle()
-                            .fill(accent)
-                            .frame(width: 3)
-                            .clipShape(RoundedRectangle(cornerRadius: 2))
-                            .padding(.vertical, 10)
-                    }
-                }
+                measureCard(for: measure, at: index)
 
                 insertionControl(at: index + 1)
             }
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
+    }
+
+    private var sequenceGrid: some View {
+        VStack(spacing: 6) {
+            insertionControl(at: 0)
+
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: 16, alignment: .top),
+                    GridItem(.flexible(), spacing: 16, alignment: .top)
+                ],
+                alignment: .leading,
+                spacing: 10
+            ) {
+                ForEach(Array(metronome.sequence.enumerated()), id: \.element.id) { index, measure in
+                    VStack(spacing: 6) {
+                        measureCard(for: measure, at: index)
+
+                        insertionControl(at: index + 1)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 12)
+    }
+
+    private func measureCard(for measure: TimeSignature, at index: Int) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                measureNumberLabel(forIndex: index)
+
+                measureSignatureEditor(for: measure)
+
+                groupingMenu(for: measure)
+
+                Spacer(minLength: 0)
+
+                Button {
+                    metronome.deleteMeasure(measure)
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(muted)
+                        .frame(width: 32, height: 32)
+                }
+                .buttonStyle(.plain)
+                .disabled(metronome.sequence.count <= 1)
+                .opacity(metronome.sequence.count <= 1 ? 0.35 : 1)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(border, lineWidth: 1))
+            }
+
+            FlowLayout(spacing: 5, lineSpacing: 5) {
+                ForEach(0..<measure.numerator, id: \.self) { beat in
+                    Circle()
+                        .fill(miniDotFill(measureIndex: index, measure: measure, beat: beat))
+                        .stroke(miniDotStroke(measure: measure, beat: beat), lineWidth: 1)
+                        .frame(width: 11, height: 11)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(surface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(index == metronome.currentMeasureIndex && metronome.isPlaying ? accent : border, lineWidth: 1.5)
+        )
+        .overlay(alignment: .leading) {
+            if metronome.isMeasureInActiveLoop(index: index) {
+                Rectangle()
+                    .fill(accent)
+                    .frame(width: 3)
+                    .clipShape(RoundedRectangle(cornerRadius: 2))
+                    .padding(.vertical, 10)
+            }
+        }
     }
 
     private func measureNumberLabel(forIndex index: Int) -> some View {

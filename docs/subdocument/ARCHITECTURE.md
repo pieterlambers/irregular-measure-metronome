@@ -36,7 +36,7 @@ flowchart TD
     B -->|"uses for UI-only delays"| I["Task.sleep / async timing"]
     I -->|"clears BPM flash<br/>resets tap tempo text"| B
 
-    C -->|"renders wrapped beat dots and sequence dots"| J["FlowLayout"]
+    C -->|"chooses compact or regular-width layout<br/>and renders wrapped beat dots and sequence dots"| J["FlowLayout"]
 
     click B href "./participants/metronomemodel.md" "Open MetronomeModel responsibilities"
     click C href "./participants/contentview.md" "Open ContentView responsibilities"
@@ -51,7 +51,8 @@ flowchart TD
 - Use the participant links above for reliable navigation. Some Markdown previews disable clickable Mermaid nodes.
 - `IrregularMeasureMetronomeApp` creates a single shared `MetronomeModel` and injects it into the SwiftUI environment.
 - `ContentView` is the only UI surface in this project and drives all user interaction, including song library controls, playback controls, count-in selection, tap tempo, start measure number, loop range selection, measure editing, grouping selection, and beat visualization.
+- `ContentView` adapts the same controls for compact iPhone-width layouts and regular-width iPad layouts; on regular width it keeps transport and tempo controls in a left column and renders the sequence editor as a two-column measure grid on the wider right side.
 - `MetronomeModel` owns published song-library state, playback state, playback lifecycle, tap tempo, sequence management, grouping validation, loop range mapping, consecutive measure numbering, persistence, and stale-callback filtering.
 - `ClickEngine` owns accented, subaccented, and regular audio generation, buffered beat scheduling, silence-buffer caching, and audio-to-model beat callbacks.
 - `Task.sleep` is not the beat-loop scheduler; it handles short UI delays for BPM flashing and tap-tempo reset.
-- `FlowLayout` wraps the main beat dots and the compact sequence dots.
+- `FlowLayout` wraps the main beat dots and the compact sequence dots inside either adaptive layout.
