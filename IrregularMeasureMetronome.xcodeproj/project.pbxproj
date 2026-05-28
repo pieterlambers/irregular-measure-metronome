@@ -12,6 +12,7 @@
 		0A0000132C00000000000000 /* MetronomeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000032C00000000000000 /* MetronomeModel.swift */; };
 		0A0000142C00000000000000 /* ClickEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000042C00000000000000 /* ClickEngine.swift */; };
 		0A0000152C00000000000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000052C00000000000000 /* Assets.xcassets */; };
+		0A0000162C00000000000000 /* ForestForTheTreesSong.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000072C00000000000000 /* ForestForTheTreesSong.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +22,7 @@
 		0A0000042C00000000000000 /* ClickEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickEngine.swift; sourceTree = "<group>"; };
 		0A0000052C00000000000000 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0A0000062C00000000000000 /* IrregularMeasureMetronome.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IrregularMeasureMetronome.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A0000072C00000000000000 /* ForestForTheTreesSong.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForestForTheTreesSong.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,6 +50,7 @@
 				0A0000012C00000000000000 /* IrregularMeasureMetronomeApp.swift */,
 				0A0000022C00000000000000 /* ContentView.swift */,
 				0A0000032C00000000000000 /* MetronomeModel.swift */,
+				0A0000072C00000000000000 /* ForestForTheTreesSong.swift */,
 				0A0000042C00000000000000 /* ClickEngine.swift */,
 				0A0000052C00000000000000 /* Assets.xcassets */,
 			);
@@ -135,6 +138,7 @@
 				0A0000122C00000000000000 /* ContentView.swift in Sources */,
 				0A0000132C00000000000000 /* MetronomeModel.swift in Sources */,
 				0A0000142C00000000000000 /* ClickEngine.swift in Sources */,
+				0A0000162C00000000000000 /* ForestForTheTreesSong.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

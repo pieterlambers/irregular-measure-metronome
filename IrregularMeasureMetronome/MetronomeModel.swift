@@ -146,6 +146,9 @@ final class MetronomeModel: ObservableObject {
         TimeSignature(numerator: 4, denominator: 4),
         TimeSignature(numerator: 3, denominator: 4)
     ]
+    private static let builtInSongs = [
+        ForestForTheTreesSong.measure446To472
+    ]
 
     init() {
         let library = Self.loadSongLibrary(
@@ -620,7 +623,7 @@ final class MetronomeModel: ObservableObject {
                 loopRange: decoded.loopRange,
                 countInFourFourEnabled: false
             )
-            return PersistedSongLibrary(currentSongID: song.id, songs: [song])
+            return PersistedSongLibrary(currentSongID: song.id, songs: cleanSongs([song]))
         }
 
         if let data = UserDefaults.standard.data(forKey: legacySequenceStorageKey),
@@ -633,11 +636,11 @@ final class MetronomeModel: ObservableObject {
                 loopRange: nil,
                 countInFourFourEnabled: false
             )
-            return PersistedSongLibrary(currentSongID: song.id, songs: [song])
+            return PersistedSongLibrary(currentSongID: song.id, songs: cleanSongs([song]))
         }
 
         let song = defaultSong(named: "Song 1")
-        return PersistedSongLibrary(currentSongID: song.id, songs: [song])
+        return PersistedSongLibrary(currentSongID: song.id, songs: cleanSongs([song]))
     }
 
     private static func cleanSongs(_ songs: [Song]) -> [Song] {
@@ -656,7 +659,10 @@ final class MetronomeModel: ObservableObject {
             )
         }
 
-        return cleanSongs.isEmpty ? [defaultSong(named: "Song 1")] : cleanSongs
+        let storedSongs = cleanSongs.isEmpty ? [defaultSong(named: "Song 1")] : cleanSongs
+        return storedSongs + builtInSongs.filter { builtInSong in
+            !storedSongs.contains { $0.id == builtInSong.id }
+        }
     }
 
     private static func cleanSequence(_ sequence: [TimeSignature]) -> [TimeSignature] {
