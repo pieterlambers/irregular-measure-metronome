@@ -134,7 +134,10 @@ final class MetronomeModel: ObservableObject {
     private let compositionStorageKey = "metro.composition.v2"
     private let legacySequenceStorageKey = "metro.sequence.v1"
     private let songLibraryStorageKey = "metro.songLibrary.v1"
-    private let clickEngine = ClickEngine()
+    private let clickEngine: ClickEngineProtocol
+    private let userDefaults: UserDefaults
+    private let now: () -> Date
+    private let tapResetDelay: Duration
     private var flashTask: Task<Void, Never>?
     private var tapResetTask: Task<Void, Never>?
     private var tapTimes: [Date] = []
@@ -150,8 +153,18 @@ final class MetronomeModel: ObservableObject {
         ForestForTheTreesSong.measure446To472
     ]
 
-    init() {
+    init(
+        clickEngine: ClickEngineProtocol = ClickEngine(),
+        userDefaults: UserDefaults = .standard,
+        now: @escaping () -> Date = Date.init,
+        tapResetDelay: Duration = .milliseconds(2500)
+    ) {
+        self.clickEngine = clickEngine
+        self.userDefaults = userDefaults
+        self.now = now
+        self.tapResetDelay = tapResetDelay
         let library = Self.loadSongLibrary(
+            userDefaults: userDefaults,
             songLibraryStorageKey: songLibraryStorageKey,
             compositionStorageKey: compositionStorageKey,
             legacySequenceStorageKey: legacySequenceStorageKey
@@ -316,15 +329,16 @@ final class MetronomeModel: ObservableObject {
     }
 
     func tapTempo() {
-        let now = Date()
-        tapTimes.append(now)
+        let tapTime = now()
+        tapTimes.append(tapTime)
         if tapTimes.count > 8 {
             tapTimes.removeFirst()
         }
 
         tapResetTask?.cancel()
+        let tapResetDelay = tapResetDelay
         tapResetTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(2500))
+            try? await Task.sleep(for: tapResetDelay)
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 self?.tapTimes.removeAll()
@@ -568,9 +582,9 @@ final class MetronomeModel: ObservableObject {
         do {
             let library = PersistedSongLibrary(currentSongID: currentSongID, songs: songs)
             let data = try JSONEncoder().encode(library)
-            UserDefaults.standard.set(data, forKey: songLibraryStorageKey)
+            userDefaults.set(data, forKey: songLibraryStorageKey)
         } catch {
-            UserDefaults.standard.removeObject(forKey: songLibraryStorageKey)
+            userDefaults.removeObject(forKey: songLibraryStorageKey)
         }
     }
 
@@ -600,11 +614,12 @@ final class MetronomeModel: ObservableObject {
     }
 
     private static func loadSongLibrary(
+        userDefaults: UserDefaults,
         songLibraryStorageKey: String,
         compositionStorageKey: String,
         legacySequenceStorageKey: String
     ) -> PersistedSongLibrary {
-        if let data = UserDefaults.standard.data(forKey: songLibraryStorageKey),
+        if let data = userDefaults.data(forKey: songLibraryStorageKey),
            let decoded = try? JSONDecoder().decode(PersistedSongLibrary.self, from: data) {
             let songs = cleanSongs(decoded.songs)
             let currentSongID = songs.contains { $0.id == decoded.currentSongID }
@@ -613,7 +628,7 @@ final class MetronomeModel: ObservableObject {
             return PersistedSongLibrary(currentSongID: currentSongID, songs: songs)
         }
 
-        if let data = UserDefaults.standard.data(forKey: compositionStorageKey),
+        if let data = userDefaults.data(forKey: compositionStorageKey),
            let decoded = try? JSONDecoder().decode(PersistedComposition.self, from: data) {
             let song = Song(
                 name: "Song 1",
@@ -626,7 +641,7 @@ final class MetronomeModel: ObservableObject {
             return PersistedSongLibrary(currentSongID: song.id, songs: cleanSongs([song]))
         }
 
-        if let data = UserDefaults.standard.data(forKey: legacySequenceStorageKey),
+        if let data = userDefaults.data(forKey: legacySequenceStorageKey),
            let decoded = try? JSONDecoder().decode([TimeSignature].self, from: data) {
             let song = Song(
                 name: "Song 1",
@@ -645,8 +660,11 @@ final class MetronomeModel: ObservableObject {
 
     private static func cleanSongs(_ songs: [Song]) -> [Song] {
         let cleanSongs = songs.enumerated().compactMap { index, song -> Song? in
+            let hasValidSignature = song.sequence.contains {
+                (1...24).contains($0.numerator) && (1...64).contains($0.denominator)
+            }
+            guard hasValidSignature else { return nil }
             let sequence = cleanSequence(song.sequence)
-            guard !sequence.isEmpty else { return nil }
             return Song(
                 id: song.id,
                 name: cleanSongName(song.name, fallback: "Song \(index + 1)"),
@@ -735,13 +753,13 @@ final class MetronomeModel: ObservableObject {
     }
 }
 
-private struct PersistedComposition: Codable {
+struct PersistedComposition: Codable {
     var startMeasureNumber: Int
     var sequence: [TimeSignature]
     var loopRange: PersistedLoopRange?
 }
 
-private struct PersistedSongLibrary: Codable {
+struct PersistedSongLibrary: Codable {
     var currentSongID: UUID
     var songs: [Song]
 }

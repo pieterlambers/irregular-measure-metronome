@@ -1,7 +1,23 @@
 import AVFoundation
 import Foundation
 
-final class ClickEngine {
+protocol ClickEngineProtocol: AnyObject {
+    func start(
+        bpm: Int,
+        sequence: [TimeSignature],
+        startMeasureIndex: Int,
+        startBeat: Int,
+        loopStartIndex: Int,
+        loopEndIndex: Int,
+        loopCount: Int,
+        countInBeats: Int,
+        onBeat: @escaping (Int, Int, Int, Bool) -> Void
+    )
+
+    func stop()
+}
+
+final class ClickEngine: ClickEngineProtocol {
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
     private let schedulerQueue = DispatchQueue(label: "metro.click-engine.scheduler")
@@ -67,21 +83,15 @@ final class ClickEngine {
             self.stopSchedulingOnQueue()
             self.scheduleGeneration += 1
             let generation = self.scheduleGeneration
-            let lastIndex = sequence.count - 1
-            let clampedLoopStart = min(max(0, loopStartIndex), lastIndex)
-            let clampedLoopEnd = min(max(0, loopEndIndex), lastIndex)
-            let activeLoopStart = min(clampedLoopStart, clampedLoopEnd)
-            let activeLoopEnd = max(clampedLoopStart, clampedLoopEnd)
-            let playback = PlaybackState(
+            let playback = PlaybackCursor(
                 bpm: bpm,
                 sequence: sequence,
-                measureIndex: min(max(activeLoopStart, startMeasureIndex), activeLoopEnd),
-                beat: max(0, startBeat),
-                loopStartIndex: activeLoopStart,
-                loopEndIndex: activeLoopEnd,
-                loopCount: max(1, loopCount),
-                countInBeatsRemaining: max(0, countInBeats),
-                onBeat: onBeat
+                startMeasureIndex: startMeasureIndex,
+                startBeat: startBeat,
+                loopStartIndex: loopStartIndex,
+                loopEndIndex: loopEndIndex,
+                loopCount: loopCount,
+                countInBeats: countInBeats
             )
 
             self.player.stop()
@@ -89,14 +99,14 @@ final class ClickEngine {
             self.pendingScheduledBeats = 0
             self.nextCallbackOffset = 0
             self.callbackStartTime = .now() + .milliseconds(20)
-            var state = playback.normalized()
-            self.fillQueue(state: &state, generation: generation)
+            var state = playback
+            self.fillQueue(state: &state, generation: generation, onBeat: onBeat)
 
             let timer = DispatchSource.makeTimerSource(queue: self.schedulerQueue)
             timer.schedule(deadline: .now() + .milliseconds(100), repeating: .milliseconds(100))
             timer.setEventHandler { [weak self] in
                 guard let self, generation == self.scheduleGeneration else { return }
-                self.fillQueue(state: &state, generation: generation)
+                self.fillQueue(state: &state, generation: generation, onBeat: onBeat)
             }
             self.schedulerTimer = timer
             timer.resume()
@@ -118,14 +128,22 @@ final class ClickEngine {
         pendingScheduledBeats = 0
     }
 
-    private func fillQueue(state: inout PlaybackState, generation: Int) {
+    private func fillQueue(
+        state: inout PlaybackCursor,
+        generation: Int,
+        onBeat: @escaping (Int, Int, Int, Bool) -> Void
+    ) {
         guard generation == scheduleGeneration else { return }
         while pendingScheduledBeats < maxQueuedBeats {
-            scheduleBeat(state: &state, generation: generation)
+            scheduleBeat(state: &state, generation: generation, onBeat: onBeat)
         }
     }
 
-    private func scheduleBeat(state: inout PlaybackState, generation: Int) {
+    private func scheduleBeat(
+        state: inout PlaybackCursor,
+        generation: Int,
+        onBeat: @escaping (Int, Int, Int, Bool) -> Void
+    ) {
         guard let format,
               let accentedBuffer,
               let subaccentedBuffer,
@@ -156,7 +174,6 @@ final class ClickEngine {
         let beatMeasureIndex = state.measureIndex
         let beat = scheduledBeat
         let beatLoopCount = state.loopCount
-        let onBeat = state.onBeat
         let callbackDeadline = callbackStartTime + .nanoseconds(Int(nextCallbackOffset * 1_000_000_000))
 
         pendingScheduledBeats += 1
@@ -217,7 +234,7 @@ final class ClickEngine {
     }
 }
 
-private struct PlaybackState {
+struct PlaybackCursor {
     let bpm: Int
     let sequence: [TimeSignature]
     var measureIndex: Int
@@ -227,21 +244,38 @@ private struct PlaybackState {
     var loopCount: Int
     var countInBeatsRemaining: Int
     var countInBeat = 0
-    let onBeat: (Int, Int, Int, Bool) -> Void
 
     var isCountingIn: Bool {
         countInBeatsRemaining > 0
     }
 
-    func normalized() -> PlaybackState {
-        var copy = self
-        copy.measureIndex = copy.measureIndex.clamped(to: copy.loopStartIndex...copy.loopEndIndex)
-        copy.countInBeat = 0
-        let measure = copy.sequence[copy.measureIndex]
-        if copy.beat >= measure.numerator {
-            copy.beat = 0
+    init(
+        bpm: Int,
+        sequence: [TimeSignature],
+        startMeasureIndex: Int,
+        startBeat: Int,
+        loopStartIndex: Int,
+        loopEndIndex: Int,
+        loopCount: Int,
+        countInBeats: Int
+    ) {
+        let lastIndex = sequence.count - 1
+        let clampedLoopStart = min(max(0, loopStartIndex), lastIndex)
+        let clampedLoopEnd = min(max(0, loopEndIndex), lastIndex)
+        self.bpm = bpm
+        self.sequence = sequence
+        self.loopStartIndex = min(clampedLoopStart, clampedLoopEnd)
+        self.loopEndIndex = max(clampedLoopStart, clampedLoopEnd)
+        self.loopCount = max(1, loopCount)
+        self.countInBeatsRemaining = max(0, countInBeats)
+        self.measureIndex = min(max(self.loopStartIndex, startMeasureIndex), self.loopEndIndex)
+        self.beat = max(0, startBeat)
+        self.countInBeat = 0
+
+        let measure = sequence[self.measureIndex]
+        if self.beat >= measure.numerator {
+            self.beat = 0
         }
-        return copy
     }
 
     mutating func advancePastCurrentBeat() {
