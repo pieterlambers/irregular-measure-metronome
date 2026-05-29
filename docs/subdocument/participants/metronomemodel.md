@@ -4,7 +4,7 @@
 
 - Acts as the source of truth for metronome state.
 - Publishes UI state including `songs`, `currentSongID`, `currentSongName`, `bpm`, `isPlaying`, `currentBeat`, `currentMeasureIndex`, `loopCount`, `isCountingIn`, `isCountInFourFourEnabled`, `sequence`, `startMeasureNumber`, `isLoopRangeEnabled`, loop boundary indices, `tapTempoText`, `flashBPM`, and `pendulumDirection`.
-- Manages the local song library, including selecting songs, creating default songs, duplicating the current song, deleting the current song when another song exists, and renaming the current song.
+- Manages the local song library, including selecting songs, creating default songs, duplicating the current song, resetting editable built-in songs to their hardcoded version, deleting the current song when another song exists, and renaming the current song.
 - Starts playback by resetting published playback counters and asking `ClickEngine` to start buffered scheduling, with a four-beat 4/4 count-in when enabled.
 - Stops playback by incrementing `playbackGeneration`, stopping `ClickEngine`, cancelling flash timing, and resetting transient playback indicators.
 - Receives scheduled beat callbacks from `ClickEngine`.

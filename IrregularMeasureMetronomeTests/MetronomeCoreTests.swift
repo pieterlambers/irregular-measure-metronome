@@ -539,6 +539,54 @@ final class SongLibraryPersistenceTests: XCTestCase {
         XCTAssertEqual(model.songs.filter { $0.id == ForestForTheTreesSong.measure446To472ID }.count, 1)
     }
 
+    func testLoadsEditedBuiltInSongWithoutOverwritingIt() throws {
+        let userDefaults = makeUserDefaults()
+        var editedBuiltIn = ForestForTheTreesSong.measure446To472
+        editedBuiltIn.name = "Forest Practice Edit"
+        editedBuiltIn.bpm = 132
+        editedBuiltIn.startMeasureNumber = 500
+        editedBuiltIn.sequence = [signature(5, 8)]
+        let library = PersistedSongLibrary(
+            currentSongID: editedBuiltIn.id,
+            songs: [editedBuiltIn]
+        )
+        try store(library, in: userDefaults, key: "metro.songLibrary.v1")
+
+        let model = MetronomeModel(clickEngine: FakeClickEngine(), userDefaults: userDefaults)
+
+        XCTAssertTrue(model.canResetCurrentSongToBuiltIn)
+        XCTAssertEqual(model.currentSongName, "Forest Practice Edit")
+        XCTAssertEqual(model.bpm, 132)
+        XCTAssertEqual(model.startMeasureNumber, 500)
+        XCTAssertEqual(model.sequence.map(\.label), ["5/8"])
+    }
+
+    func testResetsCurrentBuiltInSongToHardcodedVersion() throws {
+        let userDefaults = makeUserDefaults()
+        var editedBuiltIn = ForestForTheTreesSong.measure446To472
+        editedBuiltIn.name = "Forest Practice Edit"
+        editedBuiltIn.bpm = 132
+        editedBuiltIn.startMeasureNumber = 500
+        editedBuiltIn.sequence = [signature(5, 8)]
+        let library = PersistedSongLibrary(
+            currentSongID: editedBuiltIn.id,
+            songs: [editedBuiltIn]
+        )
+        try store(library, in: userDefaults, key: "metro.songLibrary.v1")
+        let model = MetronomeModel(clickEngine: FakeClickEngine(), userDefaults: userDefaults)
+
+        model.resetCurrentSongToBuiltIn()
+
+        let hardcoded = ForestForTheTreesSong.measure446To472
+        XCTAssertEqual(model.currentSongID, hardcoded.id)
+        XCTAssertEqual(model.currentSongName, hardcoded.name)
+        XCTAssertEqual(model.bpm, hardcoded.bpm)
+        XCTAssertEqual(model.startMeasureNumber, hardcoded.startMeasureNumber)
+        XCTAssertEqual(model.sequence.map(\.label), hardcoded.sequence.map(\.label))
+        XCTAssertEqual(model.sequence.compactMap(\.validGrouping), hardcoded.sequence.compactMap(\.validGrouping))
+        XCTAssertEqual(model.songs.filter { $0.id == ForestForTheTreesSong.measure446To472ID }.count, 1)
+    }
+
     func testFallsBackToDefaultSongWhenStoredSongsAreInvalid() throws {
         let userDefaults = makeUserDefaults()
         let library = PersistedSongLibrary(

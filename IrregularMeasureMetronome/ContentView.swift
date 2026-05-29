@@ -190,6 +190,13 @@ struct ContentView: View {
                     endMeasureEditing()
                 }
 
+                songIconButton("arrow.counterclockwise", label: "Reset to built-in song") {
+                    metronome.resetCurrentSongToBuiltIn()
+                    endMeasureEditing()
+                }
+                .disabled(!metronome.canResetCurrentSongToBuiltIn)
+                .opacity(metronome.canResetCurrentSongToBuiltIn ? 1 : 0.35)
+
                 songIconButton("trash", label: "Delete song") {
                     metronome.deleteCurrentSong()
                     endMeasureEditing()

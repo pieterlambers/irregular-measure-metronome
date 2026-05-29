@@ -210,6 +210,10 @@ final class MetronomeModel: ObservableObject {
         songs.first { $0.id == currentSongID } ?? Self.defaultSong()
     }
 
+    var canResetCurrentSongToBuiltIn: Bool {
+        Self.builtInSongs.contains { $0.id == currentSongID }
+    }
+
     func selectSong(_ song: Song) {
         guard song.id != currentSongID else { return }
         guard let storedSong = songs.first(where: { $0.id == song.id }) else { return }
@@ -244,6 +248,18 @@ final class MetronomeModel: ObservableObject {
         }
         songs.append(song)
         applySong(song, savePreviousSong: false)
+        saveSongLibrary()
+    }
+
+    func resetCurrentSongToBuiltIn() {
+        guard var builtInSong = Self.builtInSongs.first(where: { $0.id == currentSongID }) else { return }
+        builtInSong.updatedAt = Date()
+        if let index = songs.firstIndex(where: { $0.id == builtInSong.id }) {
+            songs[index] = builtInSong
+        } else {
+            songs.append(builtInSong)
+        }
+        applySong(builtInSong, savePreviousSong: false)
         saveSongLibrary()
     }
 

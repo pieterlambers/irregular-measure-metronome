@@ -7,10 +7,10 @@
 - Switches between the compact single-column layout and the regular-width iPad layout based on `horizontalSizeClass`.
 - On regular-width screens, keeps song, tempo, beat visualization, and transport controls in a left column while rendering the sequence editor as a two-column measure grid in the wider right column.
 - Displays song selection and naming controls, tempo, tempo name, beat dots, pendulum state, playback controls, count-in control, sequence rows, grouping pickers, inline measure editors, start measure number, loop range controls, and loop count.
-- Converts UI events into model calls and bindings: `selectSong(_:)`, `createSong()`, `duplicateCurrentSong()`, `deleteCurrentSong()`, `togglePlayback()`, `isCountInFourFourEnabled`, `tapTempo()`, `duplicateMeasure(at:)`, `updateMeasure(_:numerator:denominator:)`, `updateGrouping(for:grouping:)`, `updateLoopStartMeasureNumber(_:)`, `updateLoopEndMeasureNumber(_:)`, and `deleteMeasure(_:)`.
+- Converts UI events into model calls and bindings: `selectSong(_:)`, `createSong()`, `duplicateCurrentSong()`, `resetCurrentSongToBuiltIn()`, `deleteCurrentSong()`, `togglePlayback()`, `isCountInFourFourEnabled`, `tapTempo()`, `duplicateMeasure(at:)`, `updateMeasure(_:numerator:denominator:)`, `updateGrouping(for:grouping:)`, `updateLoopStartMeasureNumber(_:)`, `updateLoopEndMeasureNumber(_:)`, and `deleteMeasure(_:)`.
 - Validates inline measure editor text before forwarding measure updates.
 - Tracks local editing state for the selected measure signature text, first measure number text, keyboard focus, and validation errors.
-- Lets the user edit the current song name, switch songs from a menu, create a default song, duplicate the current song, and delete the current song when at least one other song exists.
+- Lets the user edit the current song name, switch songs from a menu, create a default song, duplicate the current song, reset editable built-in songs to their hardcoded version, and delete the current song when at least one other song exists.
 - Lets the user enable a four-beat 4/4 count-in before playback starts from the active loop start.
 - Lets the user type or step the first displayed measure number while keeping all rows consecutive.
 - Lets the user enable a loop range and set inclusive `from` / `to` measure numbers.

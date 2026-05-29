@@ -87,7 +87,8 @@ The tests live in:
 - falling back to the default song when stored songs are invalid;
 - migrating `metro.composition.v2`;
 - migrating `metro.sequence.v1`;
-- including the built-in song exactly once.
+- including the built-in song exactly once;
+- preserving edits to persisted built-in songs and resetting them to their hardcoded version on request.
 
 ## Test Seams
 

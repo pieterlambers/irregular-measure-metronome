@@ -42,7 +42,7 @@ sequenceDiagram
     end
 
     rect rgb(35, 35, 40)
-        Note over User,Defaults: Create, Duplicate, or Delete Song
+        Note over User,Defaults: Create, Duplicate, Reset, or Delete Song
         alt Create song
             User->>View: Tap new song button
             View->>Model: createSong()
@@ -59,6 +59,16 @@ sequenceDiagram
             Model->>Model: copy current song with new ID, copied measure IDs, and Copy name
             Model->>Model: apply duplicated song
             Model->>Defaults: save encoded song library
+        else Reset built-in song
+            User->>View: Tap reset song button
+            alt Current song is not built-in
+                View->>View: reset button is disabled
+            else Current song is built-in
+                View->>Model: resetCurrentSongToBuiltIn()
+                Model->>Model: replace current song with hardcoded built-in version
+                Model->>Model: apply reset song
+                Model->>Defaults: save encoded song library
+            end
         else Delete song
             User->>View: Tap delete song button
             alt Only one song remains
