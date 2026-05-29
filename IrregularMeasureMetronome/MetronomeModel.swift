@@ -150,6 +150,7 @@ final class MetronomeModel: ObservableObject {
         TimeSignature(numerator: 3, denominator: 4)
     ]
     private static let builtInSongs = [
+        ForestForTheTreesSong.measure105To136,
         ForestForTheTreesSong.measure446To472
     ]
 
