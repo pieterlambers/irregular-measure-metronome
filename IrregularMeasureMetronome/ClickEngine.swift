@@ -32,10 +32,18 @@ final class ClickEngine: ClickEngineProtocol {
     private var scheduleGeneration = 0
     private var nextCallbackOffset: TimeInterval = 0
     private var callbackStartTime = DispatchTime.now()
+    private var isObservingAudioSession = false
+    private var wasPlayingBeforeInterruption = false
 
     private let maxQueuedBeats = 12
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     func prepare() {
+        startObservingAudioSession()
+
         let format = self.format ?? AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
         self.format = format
 
@@ -54,14 +62,7 @@ final class ClickEngine: ClickEngineProtocol {
             engine.connect(player, to: engine.mainMixerNode, format: format)
         }
 
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-        try? AVAudioSession.sharedInstance().setActive(true)
-        if !engine.isRunning {
-            try? engine.start()
-        }
-        if !player.isPlaying {
-            player.play()
-        }
+        activateAudioSessionAndPlayer()
     }
 
     func start(
@@ -126,6 +127,80 @@ final class ClickEngine: ClickEngineProtocol {
         schedulerTimer?.cancel()
         schedulerTimer = nil
         pendingScheduledBeats = 0
+    }
+
+    private func startObservingAudioSession() {
+        guard !isObservingAudioSession else { return }
+        isObservingAudioSession = true
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioSessionInterruption),
+            name: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance()
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioSessionRouteChange),
+            name: AVAudioSession.routeChangeNotification,
+            object: AVAudioSession.sharedInstance()
+        )
+    }
+
+    private func activateAudioSessionAndPlayer() {
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        try? AVAudioSession.sharedInstance().setActive(true)
+        if !engine.isRunning {
+            try? engine.start()
+        }
+        if !player.isPlaying {
+            player.play()
+        }
+    }
+
+    @objc private func handleAudioSessionInterruption(_ notification: Notification) {
+        guard let typeValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue)
+        else { return }
+
+        schedulerQueue.async { [weak self] in
+            guard let self else { return }
+
+            switch type {
+            case .began:
+                self.wasPlayingBeforeInterruption = self.player.isPlaying
+                self.player.pause()
+                self.engine.pause()
+            case .ended:
+                guard self.wasPlayingBeforeInterruption else { return }
+
+                let optionValue = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+                let options = AVAudioSession.InterruptionOptions(rawValue: optionValue)
+                if options.contains(.shouldResume) {
+                    self.activateAudioSessionAndPlayer()
+                }
+                self.wasPlayingBeforeInterruption = false
+            @unknown default:
+                break
+            }
+        }
+    }
+
+    @objc private func handleAudioSessionRouteChange(_ notification: Notification) {
+        guard let reasonValue = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+              let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue)
+        else { return }
+
+        schedulerQueue.async { [weak self] in
+            guard let self, self.schedulerTimer != nil else { return }
+
+            switch reason {
+            case .oldDeviceUnavailable, .categoryChange, .routeConfigurationChange:
+                self.activateAudioSessionAndPlayer()
+            default:
+                break
+            }
+        }
     }
 
     private func fillQueue(
