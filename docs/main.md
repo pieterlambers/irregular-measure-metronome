@@ -6,6 +6,7 @@ Start here when changing the app. These notes describe the current shape of the 
 
 - [Architecture](subdocument/ARCHITECTURE.md): high-level component ownership and data flow.
 - [Audio Scheduling](subdocument/AUDIO_SCHEDULING.md): buffered click scheduling introduced by the latest committed audio changes.
+- [Manual QA](subdocument/MANUAL_QA.md): real-device iPhone and iPad checks for audio, lifecycle, layout, and App Store readiness.
 - [Testing](subdocument/TESTING.md): what the XCTest target covers, the test seams it uses, and how to run it.
 - [User Action Sequence Diagram](subdocument/USER_ACTION_SEQUENCE.md): sequence-level behavior for every current user action.
 - [Sequence Participants](subdocument/participants): responsibility notes for each participant in the user action sequence diagram.
@@ -16,6 +17,7 @@ Use these docs as working context before adjusting the code:
 
 - Check [Architecture](subdocument/ARCHITECTURE.md) before changing ownership between `ContentView`, `MetronomeModel`, `ClickEngine`, persistence, or timing.
 - Check [Audio Scheduling](subdocument/AUDIO_SCHEDULING.md) before changing `ClickEngine` buffering, scheduler queue behavior, callback timing, or playback restarts.
+- Check [Manual QA](subdocument/MANUAL_QA.md) before TestFlight or App Store submission.
 - Check [Testing](subdocument/TESTING.md) before changing `MetronomeModel`, `ClickEngine`, persistence, tap tempo, or playback cursor behavior covered by unit tests.
 - Check [User Action Sequence Diagram](subdocument/USER_ACTION_SEQUENCE.md) before changing play/pause, BPM changes, tap tempo, measure entry, grouping selection, insert measure, or delete measure behavior.
 - Check [Sequence Participants](subdocument/participants) before changing a participant's responsibilities.
