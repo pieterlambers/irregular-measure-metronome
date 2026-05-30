@@ -10,6 +10,7 @@
 - Receives scheduled beat callbacks from `ClickEngine`.
 - Filters stale beat callbacks with `playbackGeneration`.
 - Publishes the current beat, measure, loop count, count-in state, flash state, and pendulum direction in response to current beat callbacks.
+- Derives whether a sequence measure should receive the active playback highlight via `isPlayedMeasure(index:)`, which requires playback, a real sequence beat, and no count-in.
 - Restarts buffered playback from the current position when BPM changes during playback.
 - Persists BPM and the 4/4 count-in setting as part of the current song.
 - Manages tap tempo timing, averaging, BPM clamping, and tap reset behavior.

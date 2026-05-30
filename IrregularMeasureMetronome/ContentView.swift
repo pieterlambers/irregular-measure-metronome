@@ -25,6 +25,7 @@ struct ContentView: View {
                 compactLayout
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(background.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .onAppear {
@@ -61,60 +62,85 @@ struct ContentView: View {
     }
 
     private var compactLayout: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                header
-                songControls
-                tempo
-                slider
-                beatDots
-                pendulum
-                controls
-                sequenceHeader
-                measureNumberControls
-                loopRangeControls
-                sequenceList
-                loopIndicator
+        VStack(spacing: 0) {
+            header
+            songControls
+            tempo
+            slider
+            beatDots
+            pendulum
+            controls
+            loopIndicator
+            sequenceScroller {
+                VStack(spacing: 0) {
+                    sequenceHeader
+                    measureNumberControls
+                    loopRangeControls
+                    sequenceList
+                }
             }
-            .padding(.bottom, 24)
         }
-        .scrollIndicators(.hidden)
-        .scrollDismissesKeyboard(.interactively)
     }
 
     private var regularWidthLayout: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                header
+        VStack(spacing: 0) {
+            header
 
-                HStack(alignment: .top, spacing: 24) {
-                    VStack(spacing: 0) {
-                        songControls
-                        tempo
-                        slider
-                        beatDots
-                        pendulum
-                        controls
-                        loopIndicator
-                    }
-                    .frame(width: 320)
+            HStack(alignment: .top, spacing: 24) {
+                VStack(spacing: 0) {
+                    songControls
+                    tempo
+                    slider
+                    beatDots
+                    pendulum
+                    controls
+                    loopIndicator
+                }
+                .frame(width: 320)
 
-                    VStack(spacing: 0) {
-                        sequenceHeader
-                        measureNumberControls
-                        loopRangeControls
+                VStack(spacing: 0) {
+                    sequenceHeader
+                    measureNumberControls
+                    loopRangeControls
+                    sequenceScroller {
                         sequenceGrid
                     }
-                    .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: 1180)
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, 28)
+            .padding(.horizontal, 12)
+            .frame(maxWidth: 1180, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .scrollIndicators(.hidden)
-        .scrollDismissesKeyboard(.interactively)
+    }
+
+    private func sequenceScroller<Content: View>(
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                content()
+            }
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
+            .onChange(of: metronome.currentBeat) { _, _ in
+                scrollPlayedMeasure(with: proxy)
+            }
+            .onChange(of: metronome.currentMeasureIndex) { _, _ in
+                scrollPlayedMeasure(with: proxy)
+            }
+        }
+        .frame(maxHeight: .infinity)
+    }
+
+    private func scrollPlayedMeasure(with proxy: ScrollViewProxy) {
+        guard metronome.isPlayedMeasure(index: metronome.currentMeasureIndex),
+              metronome.sequence.indices.contains(metronome.currentMeasureIndex)
+        else { return }
+
+        withAnimation(.easeInOut(duration: 0.18)) {
+            proxy.scrollTo(metronome.sequence[metronome.currentMeasureIndex].id, anchor: .center)
+        }
     }
 
     private var header: some View {
@@ -542,9 +568,11 @@ struct ContentView: View {
     }
 
     private func measureCard(for measure: TimeSignature, at index: Int) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let isCurrentPlaybackMeasure = metronome.isPlayedMeasure(index: index)
+
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                measureNumberLabel(forIndex: index)
+                measureNumberLabel(forIndex: index, isCurrentPlaybackMeasure: isCurrentPlaybackMeasure)
 
                 measureSignatureEditor(for: measure)
 
@@ -578,23 +606,31 @@ struct ContentView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(surface, in: RoundedRectangle(cornerRadius: 14))
+        .id(measure.id)
+        .background(
+            isCurrentPlaybackMeasure ? accent.opacity(0.14) : surface,
+            in: RoundedRectangle(cornerRadius: 14)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(index == metronome.currentMeasureIndex && metronome.isPlaying ? accent : border, lineWidth: 1.5)
+                .stroke(
+                    isCurrentPlaybackMeasure ? accent : border,
+                    lineWidth: isCurrentPlaybackMeasure ? 2.5 : 1.5
+                )
         )
         .overlay(alignment: .leading) {
-            if metronome.isMeasureInActiveLoop(index: index) {
+            if isCurrentPlaybackMeasure || metronome.isMeasureInActiveLoop(index: index) {
                 Rectangle()
-                    .fill(accent)
-                    .frame(width: 3)
+                    .fill(isCurrentPlaybackMeasure ? .white : accent)
+                    .frame(width: isCurrentPlaybackMeasure ? 5 : 3)
                     .clipShape(RoundedRectangle(cornerRadius: 2))
                     .padding(.vertical, 10)
             }
         }
+        .animation(.easeOut(duration: 0.08), value: isCurrentPlaybackMeasure)
     }
 
-    private func measureNumberLabel(forIndex index: Int) -> some View {
+    private func measureNumberLabel(forIndex index: Int, isCurrentPlaybackMeasure: Bool) -> some View {
         HStack(spacing: 3) {
             if metronome.isLoopRangeEnabled && index == metronome.loopStartIndex {
                 Image(systemName: "repeat")
@@ -603,8 +639,14 @@ struct ContentView: View {
             }
 
             Text("\(metronome.measureNumber(forIndex: index))")
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(metronome.isMeasureInActiveLoop(index: index) ? .white : muted)
+                .font(.system(
+                    size: 11,
+                    weight: isCurrentPlaybackMeasure ? .bold : .regular,
+                    design: .monospaced
+                ))
+                .foregroundStyle(
+                    isCurrentPlaybackMeasure || metronome.isMeasureInActiveLoop(index: index) ? .white : muted
+                )
                 .monospacedDigit()
 
             if metronome.isLoopRangeEnabled && index == metronome.loopEndIndex {

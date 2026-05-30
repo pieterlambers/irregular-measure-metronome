@@ -5,8 +5,9 @@
 - Renders the complete SwiftUI interface for the metronome.
 - Reads published state from `MetronomeModel` through the environment object.
 - Switches between the compact single-column layout and the regular-width iPad layout based on `horizontalSizeClass`.
-- On regular-width screens, keeps song, tempo, beat visualization, and transport controls in a left column while rendering the sequence editor as a two-column measure grid in the wider right column.
-- Displays song selection and naming controls, tempo, tempo name, beat dots, pendulum state, playback controls, count-in control, sequence rows, grouping pickers, inline measure editors, start measure number, loop range controls, and loop count.
+- On compact screens, keeps song, tempo, beat visualization, pendulum, playback controls, and loop status visible above a dedicated scrollable sequence pane that contains sequence settings and measure rows.
+- On regular-width screens, keeps song, tempo, beat visualization, and transport controls in a left column while rendering the sequence editor as a dedicated scrollable two-column measure grid on the wider right side.
+- Displays song selection and naming controls, tempo, tempo name, beat dots, pendulum state, playback controls, count-in control, sequence rows, active playback measure highlighting, grouping pickers, inline measure editors, start measure number, loop range controls, and loop count.
 - Converts UI events into model calls and bindings: `selectSong(_:)`, `createSong()`, `duplicateCurrentSong()`, `resetCurrentSongToBuiltIn()`, `deleteCurrentSong()`, `togglePlayback()`, `isCountInFourFourEnabled`, `tapTempo()`, `duplicateMeasure(at:)`, `updateMeasure(_:numerator:denominator:)`, `updateGrouping(for:grouping:)`, `updateLoopStartMeasureNumber(_:)`, `updateLoopEndMeasureNumber(_:)`, and `deleteMeasure(_:)`.
 - Validates inline measure editor text before forwarding measure updates.
 - Tracks local editing state for the selected measure signature text, first measure number text, keyboard focus, and validation errors.
@@ -21,6 +22,8 @@
 - Disables delete actions when the sequence has only one measure.
 - Uses `FlowLayout` to wrap main beat dots and compact sequence dots, with visual markers for downbeats and configured subaccents.
 - Highlights rows that are inside the enabled loop range and marks the loop start/end rows.
+- Highlights the measure currently being played with a stronger card treatment, using `MetronomeModel.isPlayedMeasure(index:)` so count-in beats do not mark a sequence measure as active.
+- Auto-scrolls the sequence list/grid during playback so the highlighted played measure remains visible.
 
 ## Future Change Notes
 

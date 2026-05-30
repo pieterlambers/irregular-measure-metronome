@@ -108,6 +108,7 @@ sequenceDiagram
         Model->>Timer: sleep(80 ms)
         Timer-->>Model: clear flashBPM
         Model-->>View: publish playback state
+        View->>View: highlight played measure and auto-scroll sequence pane to keep it visible
     end
 
     rect rgb(35, 35, 40)

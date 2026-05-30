@@ -65,6 +65,7 @@ The tests live in:
 - BPM changes while playing restart playback from the current position;
 - count-in enabled playback starts with four count-in beats;
 - fake beat callbacks update visible playback state, flash state, and pendulum direction;
+- the played-measure highlight predicate is false before the first sequence beat, false during count-in, true for the audible current sequence measure, and false after stop;
 - stale beat callbacks from previous playback generations are ignored.
 
 ### Tap Tempo
@@ -106,7 +107,7 @@ These are intentionally left out of unit tests:
 - actual audio output;
 - `AVAudioSession` setup;
 - `AVAudioEngine` scheduling fidelity on device;
-- SwiftUI layout, colors, and animations;
+- SwiftUI layout, colors, animations, and sequence auto-scroll behavior;
 - manual verification that clicks sound musically correct through device speakers.
 
 Those areas are better covered by simulator/device smoke testing and manual audio checks.

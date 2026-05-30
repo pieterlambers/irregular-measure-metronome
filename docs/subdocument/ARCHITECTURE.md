@@ -19,7 +19,7 @@ flowchart TD
     C -->|"reads state"| B
     C -->|"user actions:<br/>song select/name/create/duplicate/delete,<br/>play/pause, count-in toggle, tap tempo,<br/>BPM slider, start measure,<br/>loop range,<br/>insert/delete measure,<br/>grouping picker"| B
 
-    B -->|"publishes UI state:<br/>songs, currentSongID, currentSongName,<br/>bpm, isPlaying, currentBeat,<br/>currentMeasureIndex, loopCount,<br/>isCountingIn, flashBPM, pendulumDirection,<br/>sequence, startMeasureNumber,<br/>loop range, count-in setting, tapTempoText"| C
+    B -->|"publishes UI state:<br/>songs, currentSongID, currentSongName,<br/>bpm, isPlaying, currentBeat,<br/>currentMeasureIndex, loopCount,<br/>isCountingIn, flashBPM, pendulumDirection,<br/>sequence, startMeasureNumber,<br/>loop range, count-in setting, tapTempoText,<br/>active played-measure predicate"| C
 
     B -->|"starts/stops buffered playback<br/>and receives beat callbacks"| D["ClickEngine"]
     D -->|"AVAudioEngine + AVAudioPlayerNode<br/>queued click + silence buffers"| E["Audio Output"]
@@ -50,9 +50,9 @@ flowchart TD
 
 - Use the participant links above for reliable navigation. Some Markdown previews disable clickable Mermaid nodes.
 - `IrregularMeasureMetronomeApp` creates a single shared `MetronomeModel` and injects it into the SwiftUI environment.
-- `ContentView` is the only UI surface in this project and drives all user interaction, including song library controls, playback controls, count-in selection, tap tempo, start measure number, loop range selection, measure editing, grouping selection, and beat visualization.
-- `ContentView` adapts the same controls for compact iPhone-width layouts and regular-width iPad layouts; on regular width it keeps transport and tempo controls in a left column and renders the sequence editor as a two-column measure grid on the wider right side.
-- `MetronomeModel` owns published song-library state, playback state, playback lifecycle, tap tempo, sequence management, grouping validation, loop range mapping, consecutive measure numbering, persistence, and stale-callback filtering.
+- `ContentView` is the only UI surface in this project and drives all user interaction, including song library controls, playback controls, count-in selection, tap tempo, start measure number, loop range selection, measure editing, grouping selection, active measure highlighting, and beat visualization.
+- `ContentView` adapts the same controls for compact iPhone-width layouts and regular-width iPad layouts; the transport, beat dots, and pendulum stay outside the measure scroller while the sequence list/grid auto-scrolls to keep the played measure visible.
+- `MetronomeModel` owns published song-library state, playback state, playback lifecycle, tap tempo, sequence management, grouping validation, loop range mapping, consecutive measure numbering, active played-measure derivation, persistence, and stale-callback filtering.
 - `ClickEngine` owns accented, subaccented, and regular audio generation, buffered beat scheduling, silence-buffer caching, and audio-to-model beat callbacks.
 - `Task.sleep` is not the beat-loop scheduler; it handles short UI delays for BPM flashing and tap-tempo reset.
 - `FlowLayout` wraps the main beat dots and the compact sequence dots inside either adaptive layout.

@@ -394,6 +394,29 @@ final class MetronomeModelPlaybackTests: XCTestCase {
         XCTAssertFalse(model.isCountingIn)
     }
 
+    func testPlayedMeasurePredicateOnlyHighlightsAudibleSequenceMeasure() async {
+        let harness = ModelHarness()
+        let model = harness.model
+        model.start()
+
+        XCTAssertFalse(model.isPlayedMeasure(index: 0))
+
+        harness.clickEngine.starts.last?.onBeat(1, 3, 2, true)
+        await Task.yield()
+
+        XCTAssertFalse(model.isPlayedMeasure(index: 1))
+
+        harness.clickEngine.starts.last?.onBeat(1, 4, 2, false)
+        await Task.yield()
+
+        XCTAssertTrue(model.isPlayedMeasure(index: 1))
+        XCTAssertFalse(model.isPlayedMeasure(index: 0))
+
+        model.stop()
+
+        XCTAssertFalse(model.isPlayedMeasure(index: 1))
+    }
+
     func testStaleCallbacksAreIgnored() async {
         let harness = ModelHarness()
         let model = harness.model

@@ -314,6 +314,10 @@ final class MetronomeModel: ObservableObject {
         isLoopRangeEnabled && (loopStartIndex...loopEndIndex).contains(index)
     }
 
+    func isPlayedMeasure(index: Int) -> Bool {
+        isPlaying && !isCountingIn && currentBeat >= 0 && index == currentMeasureIndex
+    }
+
     func togglePlayback() {
         isPlaying ? stop() : start()
     }
