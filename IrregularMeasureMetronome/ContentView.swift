@@ -145,7 +145,7 @@ struct ContentView: View {
 
     private var header: some View {
         HStack {
-            Text("Metro")
+            Text("Brass Pulse")
                 .font(.system(size: 11, weight: .medium, design: .monospaced))
                 .tracking(1.6)
                 .foregroundStyle(muted)

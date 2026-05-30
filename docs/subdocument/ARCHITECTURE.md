@@ -1,4 +1,4 @@
-# Irregular Measure Metronome Architecture
+# Brass Pulse Architecture
 
 ## Participant Links
 

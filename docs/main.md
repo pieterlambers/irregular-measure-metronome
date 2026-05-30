@@ -1,4 +1,4 @@
-# Irregular Measure Metronome Docs
+# Brass Pulse Docs
 
 Start here when changing the app. These notes describe the current shape of the code and the user-facing flows that should stay in sync with implementation changes.
 
