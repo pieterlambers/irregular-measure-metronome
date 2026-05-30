@@ -14,6 +14,7 @@
 		0A0000152C00000000000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A0000052C00000000000000 /* Assets.xcassets */; };
 		0A0000162C00000000000000 /* ForestForTheTreesSong.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000072C00000000000000 /* ForestForTheTreesSong.swift */; };
 		0A0000172C00000000000000 /* MetronomeCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000082C00000000000000 /* MetronomeCoreTests.swift */; };
+		0A0000182C00000000000000 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0A00000A2C00000000000000 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,6 +37,7 @@
 		0A0000072C00000000000000 /* ForestForTheTreesSong.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForestForTheTreesSong.swift; sourceTree = "<group>"; };
 		0A0000082C00000000000000 /* MetronomeCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetronomeCoreTests.swift; sourceTree = "<group>"; };
 		0A0000092C00000000000000 /* IrregularMeasureMetronomeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IrregularMeasureMetronomeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A00000A2C00000000000000 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +76,7 @@
 				0A0000072C00000000000000 /* ForestForTheTreesSong.swift */,
 				0A0000042C00000000000000 /* ClickEngine.swift */,
 				0A0000052C00000000000000 /* Assets.xcassets */,
+				0A00000A2C00000000000000 /* PrivacyInfo.xcprivacy */,
 			);
 			path = IrregularMeasureMetronome;
 			sourceTree = "<group>";
@@ -176,6 +179,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A0000152C00000000000000 /* Assets.xcassets in Resources */,
+				0A0000182C00000000000000 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
