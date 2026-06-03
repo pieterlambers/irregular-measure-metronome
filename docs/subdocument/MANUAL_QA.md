@@ -92,7 +92,7 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 - Test portrait and landscape orientation.
 - Confirm the left playback panel and right sequence area fit without overlap.
 - Confirm sequence grid/list scrolling keeps the active measure visible.
-- Confirm inline pickers, menus, and text fields are reachable with touch.
+- Confirm inline pickers and text fields are reachable with touch.
 - If using an external keyboard, confirm text editing still commits when focus leaves fields.
 
 ## Screenshots

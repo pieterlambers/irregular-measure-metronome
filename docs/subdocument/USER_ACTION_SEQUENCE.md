@@ -229,7 +229,7 @@ sequenceDiagram
 
     rect rgb(35, 35, 40)
         Note over User,Defaults: Change Measure Grouping
-        User->>View: Open grouping picker on a sequence row
+        User->>View: Expand inline grouping picker on a sequence row
         User->>View: Choose None or a grouping preset
         View->>Model: updateGrouping(for, grouping)
         Model->>Model: validate grouping sums to numerator

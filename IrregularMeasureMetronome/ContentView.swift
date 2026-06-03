@@ -9,6 +9,7 @@ struct ContentView: View {
     @State private var firstMeasureNumberText = ""
     @State private var invalidEditMeasure = false
     @State private var isSongPickerExpanded = false
+    @State private var expandedGroupingMeasureID: UUID?
     @FocusState private var isMeasureSignatureFocused: Bool
     @FocusState private var isFirstMeasureNumberFocused: Bool
 
@@ -623,6 +624,7 @@ struct ContentView: View {
                 Spacer(minLength: 0)
 
                 Button {
+                    expandedGroupingMeasureID = nil
                     metronome.deleteMeasure(measure)
                 } label: {
                     Image(systemName: "xmark")
@@ -634,6 +636,11 @@ struct ContentView: View {
                 .disabled(metronome.sequence.count <= 1)
                 .opacity(metronome.sequence.count <= 1 ? 0.35 : 1)
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(border, lineWidth: 1))
+            }
+
+            if expandedGroupingMeasureID == measure.id {
+                groupingPresetSelector(for: measure)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
             FlowLayout(spacing: 5, lineSpacing: 5) {
@@ -701,15 +708,9 @@ struct ContentView: View {
     }
 
     private func groupingMenu(for measure: TimeSignature) -> some View {
-        Menu {
-            Button("None") {
-                metronome.updateGrouping(for: measure, grouping: nil)
-            }
-
-            ForEach(groupingPresets(for: measure.numerator), id: \.self) { grouping in
-                Button(grouping.map(String.init).joined(separator: "+")) {
-                    metronome.updateGrouping(for: measure, grouping: grouping)
-                }
+        Button {
+            withAnimation(.easeInOut(duration: 0.14)) {
+                expandedGroupingMeasureID = expandedGroupingMeasureID == measure.id ? nil : measure.id
             }
         } label: {
             HStack(spacing: 6) {
@@ -729,6 +730,58 @@ struct ContentView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Grouping \(measure.groupingLabel)")
+    }
+
+    private func groupingPresetSelector(for measure: TimeSignature) -> some View {
+        FlowLayout(spacing: 6, lineSpacing: 6) {
+            groupingOptionButton(
+                label: "None",
+                isSelected: measure.validGrouping == nil
+            ) {
+                selectGrouping(nil, for: measure)
+            }
+
+            ForEach(groupingPresets(for: measure.numerator), id: \.self) { grouping in
+                groupingOptionButton(
+                    label: grouping.map(String.init).joined(separator: "+"),
+                    isSelected: measure.validGrouping == grouping
+                ) {
+                    selectGrouping(grouping, for: measure)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func groupingOptionButton(
+        label: String,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 11, weight: .semibold))
+
+                Text(label)
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(isSelected ? accent : muted)
+            .frame(minHeight: 28)
+            .padding(.horizontal, 8)
+            .background(isSelected ? accent.opacity(0.10) : background, in: RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(isSelected ? accent.opacity(0.55) : border, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+
+    private func selectGrouping(_ grouping: [Int]?, for measure: TimeSignature) {
+        metronome.updateGrouping(for: measure, grouping: grouping)
+        withAnimation(.easeInOut(duration: 0.14)) {
+            expandedGroupingMeasureID = nil
+        }
     }
 
     private func insertionControl(at index: Int) -> some View {
