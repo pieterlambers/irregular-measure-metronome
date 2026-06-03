@@ -3,7 +3,7 @@
 ## Responsibilities
 
 - Owns audio engine setup for metronome clicks.
-- Prepares `AVAudioEngine`, `AVAudioPlayerNode`, and click buffers.
+- Lazily creates `AVAudioEngine` and `AVAudioPlayerNode` during playback preparation, then prepares click buffers.
 - Configures playback audio session behavior.
 - Activates the audio session and starts the audio engine during preparation without starting the player node until initial buffers are queued.
 - Generates separate accented, subaccented, and regular click buffers.

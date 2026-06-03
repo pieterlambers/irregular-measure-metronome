@@ -31,5 +31,5 @@ Use these docs as working context before adjusting the code:
 - `IrregularMeasureMetronome/IrregularMeasureMetronomeApp.swift`: creates and injects the shared `MetronomeModel`.
 - `IrregularMeasureMetronome/ContentView.swift`: renders the adaptive SwiftUI interface for compact iPhone widths and regular-width iPad layouts with a scrollable sequence area and active played-measure highlighting, then forwards user actions.
 - `IrregularMeasureMetronome/MetronomeModel.swift`: owns app state, playback lifecycle, played-measure highlight derivation, tap tempo, sequence edits, and persistence.
-- `IrregularMeasureMetronome/ClickEngine.swift`: prepares the audio engine and schedules buffered accented, subaccented, or regular clicks.
+- `IrregularMeasureMetronome/ClickEngine.swift`: lazily prepares the audio engine and schedules buffered accented, subaccented, or regular clicks.
 - `IrregularMeasureMetronomeTests/MetronomeCoreTests.swift`: unit-tests pure meter rules, playback cursor advancement, model sequence editing, loop ranges, playback callbacks including played-measure highlight state, tap tempo, and persistence migration.

@@ -94,7 +94,7 @@ sequenceDiagram
         Model->>Model: reset currentBeat, currentMeasureIndex, loopCount, isCountingIn
         Model->>Model: increment playbackGeneration
         Model->>Engine: start(bpm, sequence, position, active loop range, loop count, optional 4/4 count-in, onBeat)
-        Engine->>Engine: prepare audio session, audio engine, player, and accented/subaccented/regular click buffers
+        Engine->>Engine: lazily create audio engine/player if needed, activate audio session, and prepare click buffers
         Engine->>Queue: stop previous scheduler and create generation
         opt 4/4 count-in enabled
             Queue->>Engine: schedule four quarter-note count-in beats from active loop start

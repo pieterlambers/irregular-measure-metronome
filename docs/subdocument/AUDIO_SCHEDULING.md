@@ -13,7 +13,7 @@ This document describes the buffered audio scheduling behavior in the latest com
 1. `MetronomeModel.start()` resets `currentBeat`, `currentMeasureIndex`, `loopCount`, `isCountingIn`, and `pendulumDirection`.
 2. `MetronomeModel.startPlayback(measureIndex:beat:loopCount:)` increments `playbackGeneration`.
 3. `MetronomeModel` calls `ClickEngine.start(...)` with the current BPM, sequence, starting position, loop count, optional four-beat 4/4 count-in, and an `onBeat` callback.
-4. `ClickEngine.start(...)` prepares the audio session and engine, cancels any previous scheduler, creates a new scheduling generation, normalizes the starting playback state, stops the player node, fills the initial audio queue, and then starts the player node.
+4. `ClickEngine.start(...)` prepares playback by lazily creating the audio engine and player node when needed, activating the audio session, starting the engine, cancelling any previous scheduler, creating a new scheduling generation, normalizing the starting playback state, stopping the player node, filling the initial audio queue, and then starting the player node.
 
 When the 4/4 count-in is enabled, `ClickEngine` schedules four quarter-note count-in beats at the current BPM before the first real beat. The count-in is anchored to the active loop start, so playback begins at the loop start after beat 4 of the count-in.
 
@@ -21,6 +21,7 @@ When the 4/4 count-in is enabled, `ClickEngine` schedules four quarter-note coun
 
 - `ClickEngine` schedules ahead on a private serial `DispatchQueue` named `metro.click-engine.scheduler`.
 - It keeps up to `maxQueuedBeats` buffered beats, currently `12`.
+- `AVAudioEngine` and `AVAudioPlayerNode` are not created at app launch; they are initialized during playback preparation.
 - Initial playback queues the first buffered beats before calling `AVAudioPlayerNode.play()`, so the player does not start on an empty queue.
 - Each beat is scheduled as a click buffer followed by a silence buffer.
 - The click buffer is accented when the scheduled beat is `0`, subaccented when the beat starts a configured measure grouping, and regular otherwise.
