@@ -10,8 +10,8 @@
 - Displays song selection and naming controls, tempo, tempo name, beat dots, pendulum state, playback controls, count-in control, sequence rows, active playback measure highlighting, grouping pickers, inline measure editors, start measure number, loop range controls, and loop count.
 - Converts UI events into model calls and bindings: `selectSong(_:)`, `createSong()`, `duplicateCurrentSong()`, `resetCurrentSongToBuiltIn()`, `deleteCurrentSong()`, `togglePlayback()`, `isCountInFourFourEnabled`, `tapTempo()`, `duplicateMeasure(at:)`, `updateMeasure(_:numerator:denominator:)`, `updateGrouping(for:grouping:)`, `updateLoopStartMeasureNumber(_:)`, `updateLoopEndMeasureNumber(_:)`, and `deleteMeasure(_:)`.
 - Validates inline measure editor text before forwarding measure updates.
-- Tracks local editing state for the selected measure signature text, first measure number text, keyboard focus, and validation errors.
-- Lets the user edit the current song name, switch songs from a menu, create a default song, duplicate the current song, reset editable built-in songs to their hardcoded version, and delete the current song when at least one other song exists.
+- Tracks local editing state for the selected measure signature text, first measure number text, inline song picker expansion, keyboard focus, and validation errors.
+- Lets the user edit the current song name, switch songs from an inline expandable song picker, create a default song, duplicate the current song, reset editable built-in songs to their hardcoded version, and delete the current song when at least one other song exists.
 - Lets the user enable a four-beat 4/4 count-in before playback starts from the active loop start.
 - Lets the user type or step the first displayed measure number while keeping all rows consecutive.
 - Lets the user enable a loop range and set inclusive `from` / `to` measure numbers.
@@ -29,5 +29,6 @@
 
 - Keep this view focused on presentation, local input state, and forwarding user intent.
 - Keep compact and regular-width layouts behaviorally equivalent when changing controls.
+- Keep the inline song picker in SwiftUI-owned layout unless there is an intentional reason to return to UIKit-backed menu or dialog presentation.
 - Move shared business rules into `MetronomeModel` when they affect playback, persistence, or sequence state.
 - Update `USER_ACTION_SEQUENCE.md` when adding or removing user actions from this view.

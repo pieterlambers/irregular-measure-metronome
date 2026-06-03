@@ -22,7 +22,9 @@ sequenceDiagram
 
     rect rgb(35, 35, 40)
         Note over User,Defaults: Select Song
-        User->>View: Choose song from song menu
+        User->>View: Tap song selector button
+        View->>View: expand inline song picker
+        User->>View: Tap song row
         View->>Model: selectSong(song)
         Model->>Defaults: save current song into encoded song library
         Model->>Model: stop()
@@ -30,6 +32,7 @@ sequenceDiagram
         Model->>Model: apply selected song name, BPM, sequence, start measure, and loop range
         Model->>Defaults: save encoded song library with currentSongID
         Model-->>View: publish selected song state
+        View->>View: collapse inline song picker
     end
 
     rect rgb(35, 35, 40)
@@ -91,7 +94,7 @@ sequenceDiagram
         Model->>Model: reset currentBeat, currentMeasureIndex, loopCount, isCountingIn
         Model->>Model: increment playbackGeneration
         Model->>Engine: start(bpm, sequence, position, active loop range, loop count, optional 4/4 count-in, onBeat)
-        Engine->>Engine: prepare audio engine, player, and accented/subaccented/regular click buffers
+        Engine->>Engine: prepare audio session, audio engine, player, and accented/subaccented/regular click buffers
         Engine->>Queue: stop previous scheduler and create generation
         opt 4/4 count-in enabled
             Queue->>Engine: schedule four quarter-note count-in beats from active loop start
@@ -100,6 +103,7 @@ sequenceDiagram
         end
         Queue->>Queue: fill buffered queue up to maxQueuedBeats
         Queue->>Engine: schedule click buffer and silence buffer per beat
+        Queue->>Engine: start player after initial buffers are queued
         Queue->>Queue: refill every 100 ms while generation is current
         Engine-->>Model: onBeat(measureIndex, beat, loopCount)
         Model->>Model: ignore stale callback if generation changed

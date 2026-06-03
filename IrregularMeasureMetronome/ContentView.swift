@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var editMeasureText = ""
     @State private var firstMeasureNumberText = ""
     @State private var invalidEditMeasure = false
+    @State private var isSongPickerExpanded = false
     @FocusState private var isMeasureSignatureFocused: Bool
     @FocusState private var isFirstMeasureNumberFocused: Bool
 
@@ -169,18 +170,9 @@ struct ContentView: View {
     private var songControls: some View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
-                Menu {
-                    ForEach(metronome.songs) { song in
-                        Button {
-                            metronome.selectSong(song)
-                            endMeasureEditing()
-                        } label: {
-                            if song.id == metronome.currentSongID {
-                                Label(song.name, systemImage: "checkmark")
-                            } else {
-                                Text(song.name)
-                            }
-                        }
+                Button {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        isSongPickerExpanded.toggle()
                     }
                 } label: {
                     Image(systemName: "music.note.list")
@@ -206,18 +198,26 @@ struct ContentView: View {
 
                 songIconButton("plus", label: "New song") {
                     metronome.createSong()
+                    isSongPickerExpanded = false
                     endMeasureEditing()
                 }
+            }
+
+            if isSongPickerExpanded {
+                songPickerList
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
             HStack(spacing: 8) {
                 songIconButton("doc.on.doc", label: "Duplicate song") {
                     metronome.duplicateCurrentSong()
+                    isSongPickerExpanded = false
                     endMeasureEditing()
                 }
 
                 songIconButton("arrow.counterclockwise", label: "Reset to built-in song") {
                     metronome.resetCurrentSongToBuiltIn()
+                    isSongPickerExpanded = false
                     endMeasureEditing()
                 }
                 .disabled(!metronome.canResetCurrentSongToBuiltIn)
@@ -225,6 +225,7 @@ struct ContentView: View {
 
                 songIconButton("trash", label: "Delete song") {
                     metronome.deleteCurrentSong()
+                    isSongPickerExpanded = false
                     endMeasureEditing()
                 }
                 .disabled(metronome.songs.count <= 1)
@@ -241,6 +242,47 @@ struct ContentView: View {
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 14)
+    }
+
+    private var songPickerList: some View {
+        VStack(spacing: 0) {
+            ForEach(metronome.songs) { song in
+                Button {
+                    metronome.selectSong(song)
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        isSongPickerExpanded = false
+                    }
+                    endMeasureEditing()
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: song.id == metronome.currentSongID ? "checkmark" : "circle")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(song.id == metronome.currentSongID ? accent : muted)
+                            .frame(width: 16, height: 16)
+
+                        Text(song.name)
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+
+                        Spacer(minLength: 0)
+                    }
+                    .frame(height: 34)
+                    .padding(.horizontal, 10)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                if song.id != metronome.songs.last?.id {
+                    Divider()
+                        .overlay(border)
+                }
+            }
+        }
+        .background(surface, in: RoundedRectangle(cornerRadius: 9))
+        .overlay(RoundedRectangle(cornerRadius: 9).stroke(border, lineWidth: 1))
+        .accessibilityLabel("Song list")
     }
 
     private func songIconButton(

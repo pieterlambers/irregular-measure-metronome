@@ -13,7 +13,7 @@ This document describes the buffered audio scheduling behavior in the latest com
 1. `MetronomeModel.start()` resets `currentBeat`, `currentMeasureIndex`, `loopCount`, `isCountingIn`, and `pendulumDirection`.
 2. `MetronomeModel.startPlayback(measureIndex:beat:loopCount:)` increments `playbackGeneration`.
 3. `MetronomeModel` calls `ClickEngine.start(...)` with the current BPM, sequence, starting position, loop count, optional four-beat 4/4 count-in, and an `onBeat` callback.
-4. `ClickEngine.start(...)` prepares the audio engine, cancels any previous scheduler, creates a new scheduling generation, normalizes the starting playback state, restarts the player node, and fills the initial audio queue.
+4. `ClickEngine.start(...)` prepares the audio session and engine, cancels any previous scheduler, creates a new scheduling generation, normalizes the starting playback state, stops the player node, fills the initial audio queue, and then starts the player node.
 
 When the 4/4 count-in is enabled, `ClickEngine` schedules four quarter-note count-in beats at the current BPM before the first real beat. The count-in is anchored to the active loop start, so playback begins at the loop start after beat 4 of the count-in.
 
@@ -21,6 +21,7 @@ When the 4/4 count-in is enabled, `ClickEngine` schedules four quarter-note coun
 
 - `ClickEngine` schedules ahead on a private serial `DispatchQueue` named `metro.click-engine.scheduler`.
 - It keeps up to `maxQueuedBeats` buffered beats, currently `12`.
+- Initial playback queues the first buffered beats before calling `AVAudioPlayerNode.play()`, so the player does not start on an empty queue.
 - Each beat is scheduled as a click buffer followed by a silence buffer.
 - The click buffer is accented when the scheduled beat is `0`, subaccented when the beat starts a configured measure grouping, and regular otherwise.
 - Count-in beats use a 4/4 quarter-note interval regardless of the starting measure's time signature.
@@ -52,6 +53,7 @@ This callback is used for UI state, not for audio playback. When it fires, `Metr
 - Changing `bpm` while playback is running calls `restartPlaybackFromCurrentPosition()`.
 - The restart keeps the current measure, current beat, and loop count, increments the model playback generation, and starts a fresh `ClickEngine` scheduling generation.
 - `ClickEngine` generation checks prevent stale scheduler work and stale callbacks from updating the model after a restart.
+- Audio session interruptions and route changes reactivate the audio session and engine, then resume the player when playback should continue.
 - `MetronomeModel.stop()` increments `playbackGeneration`, tells `ClickEngine` to stop, cancels flash state, resets `currentBeat` to `-1`, and resets `pendulumDirection` to `0`.
 - Inserting or deleting a measure persists the updated sequence and stops playback when it was running.
 

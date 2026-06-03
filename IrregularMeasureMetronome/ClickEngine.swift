@@ -62,7 +62,7 @@ final class ClickEngine: ClickEngineProtocol {
             engine.connect(player, to: engine.mainMixerNode, format: format)
         }
 
-        activateAudioSessionAndPlayer()
+        activateAudioSessionAndEngine()
     }
 
     func start(
@@ -96,12 +96,12 @@ final class ClickEngine: ClickEngineProtocol {
             )
 
             self.player.stop()
-            self.player.play()
             self.pendingScheduledBeats = 0
             self.nextCallbackOffset = 0
             self.callbackStartTime = .now() + .milliseconds(20)
             var state = playback
             self.fillQueue(state: &state, generation: generation, onBeat: onBeat)
+            self.player.play()
 
             let timer = DispatchSource.makeTimerSource(queue: self.schedulerQueue)
             timer.schedule(deadline: .now() + .milliseconds(100), repeating: .milliseconds(100))
@@ -147,14 +147,11 @@ final class ClickEngine: ClickEngineProtocol {
         )
     }
 
-    private func activateAudioSessionAndPlayer() {
+    private func activateAudioSessionAndEngine() {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         try? AVAudioSession.sharedInstance().setActive(true)
         if !engine.isRunning {
             try? engine.start()
-        }
-        if !player.isPlaying {
-            player.play()
         }
     }
 
@@ -177,7 +174,8 @@ final class ClickEngine: ClickEngineProtocol {
                 let optionValue = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
                 let options = AVAudioSession.InterruptionOptions(rawValue: optionValue)
                 if options.contains(.shouldResume) {
-                    self.activateAudioSessionAndPlayer()
+                    self.activateAudioSessionAndEngine()
+                    self.player.play()
                 }
                 self.wasPlayingBeforeInterruption = false
             @unknown default:
@@ -196,7 +194,8 @@ final class ClickEngine: ClickEngineProtocol {
 
             switch reason {
             case .oldDeviceUnavailable, .categoryChange, .routeConfigurationChange:
-                self.activateAudioSessionAndPlayer()
+                self.activateAudioSessionAndEngine()
+                self.player.play()
             default:
                 break
             }
