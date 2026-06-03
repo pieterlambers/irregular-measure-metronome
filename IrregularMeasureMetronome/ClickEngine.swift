@@ -18,8 +18,8 @@ protocol ClickEngineProtocol: AnyObject {
 }
 
 final class ClickEngine: ClickEngineProtocol {
-    private let engine = AVAudioEngine()
-    private let player = AVAudioPlayerNode()
+    private var engine: AVAudioEngine?
+    private var player: AVAudioPlayerNode?
     private let schedulerQueue = DispatchQueue(label: "metro.click-engine.scheduler")
 
     private var format: AVAudioFormat?
@@ -57,12 +57,19 @@ final class ClickEngine: ClickEngineProtocol {
             regularBuffer = Self.makeClickBuffer(frequency: 1100, gain: 0.28, format: format)
         }
 
+        activateAudioSession()
+
+        let engine = engine ?? AVAudioEngine()
+        let player = player ?? AVAudioPlayerNode()
+        self.engine = engine
+        self.player = player
+
         if player.engine == nil {
             engine.attach(player)
             engine.connect(player, to: engine.mainMixerNode, format: format)
         }
 
-        activateAudioSessionAndEngine()
+        startAudioEngineIfNeeded()
     }
 
     func start(
@@ -81,6 +88,7 @@ final class ClickEngine: ClickEngineProtocol {
 
         schedulerQueue.async { [weak self] in
             guard let self else { return }
+            guard let player = self.player else { return }
             self.stopSchedulingOnQueue()
             self.scheduleGeneration += 1
             let generation = self.scheduleGeneration
@@ -95,13 +103,13 @@ final class ClickEngine: ClickEngineProtocol {
                 countInBeats: countInBeats
             )
 
-            self.player.stop()
+            player.stop()
             self.pendingScheduledBeats = 0
             self.nextCallbackOffset = 0
             self.callbackStartTime = .now() + .milliseconds(20)
             var state = playback
             self.fillQueue(state: &state, generation: generation, onBeat: onBeat)
-            self.player.play()
+            player.play()
 
             let timer = DispatchSource.makeTimerSource(queue: self.schedulerQueue)
             timer.schedule(deadline: .now() + .milliseconds(100), repeating: .milliseconds(100))
@@ -119,7 +127,7 @@ final class ClickEngine: ClickEngineProtocol {
             guard let self else { return }
             self.stopSchedulingOnQueue()
             self.scheduleGeneration += 1
-            self.player.stop()
+            self.player?.stop()
         }
     }
 
@@ -147,12 +155,14 @@ final class ClickEngine: ClickEngineProtocol {
         )
     }
 
-    private func activateAudioSessionAndEngine() {
+    private func activateAudioSession() {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         try? AVAudioSession.sharedInstance().setActive(true)
-        if !engine.isRunning {
-            try? engine.start()
-        }
+    }
+
+    private func startAudioEngineIfNeeded() {
+        guard let engine, !engine.isRunning else { return }
+        try? engine.start()
     }
 
     @objc private func handleAudioSessionInterruption(_ notification: Notification) {
@@ -162,20 +172,24 @@ final class ClickEngine: ClickEngineProtocol {
 
         schedulerQueue.async { [weak self] in
             guard let self else { return }
+            guard let player = self.player,
+                  let engine = self.engine
+            else { return }
 
             switch type {
             case .began:
-                self.wasPlayingBeforeInterruption = self.player.isPlaying
-                self.player.pause()
-                self.engine.pause()
+                self.wasPlayingBeforeInterruption = player.isPlaying
+                player.pause()
+                engine.pause()
             case .ended:
                 guard self.wasPlayingBeforeInterruption else { return }
 
                 let optionValue = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
                 let options = AVAudioSession.InterruptionOptions(rawValue: optionValue)
                 if options.contains(.shouldResume) {
-                    self.activateAudioSessionAndEngine()
-                    self.player.play()
+                    self.activateAudioSession()
+                    self.startAudioEngineIfNeeded()
+                    player.play()
                 }
                 self.wasPlayingBeforeInterruption = false
             @unknown default:
@@ -191,11 +205,13 @@ final class ClickEngine: ClickEngineProtocol {
 
         schedulerQueue.async { [weak self] in
             guard let self, self.schedulerTimer != nil else { return }
+            guard let player = self.player else { return }
 
             switch reason {
             case .oldDeviceUnavailable, .categoryChange, .routeConfigurationChange:
-                self.activateAudioSessionAndEngine()
-                self.player.play()
+                self.activateAudioSession()
+                self.startAudioEngineIfNeeded()
+                player.play()
             default:
                 break
             }
@@ -219,6 +235,7 @@ final class ClickEngine: ClickEngineProtocol {
         onBeat: @escaping (Int, Int, Int, Bool) -> Void
     ) {
         guard let format,
+              let player,
               let accentedBuffer,
               let subaccentedBuffer,
               let regularBuffer
