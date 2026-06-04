@@ -1,23 +1,37 @@
 import Foundation
 import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 
 struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var metronome: MetronomeModel
-    @State private var editingMeasureID: UUID?
-    @State private var editMeasureText = ""
     @State private var firstMeasureNumberText = ""
-    @State private var invalidEditMeasure = false
     @State private var isSongPickerExpanded = false
     @State private var expandedGroupingMeasureID: UUID?
-    @FocusState private var isMeasureSignatureFocused: Bool
+    @State private var activeSignatureDrag: SignatureDrag?
+    @State private var signatureDragStep = 0
     @FocusState private var isFirstMeasureNumberFocused: Bool
+
+    private enum SignatureComponent: Equatable {
+        case numerator
+        case denominator
+    }
+
+    private struct SignatureDrag: Equatable {
+        var measureID: UUID
+        var component: SignatureComponent
+    }
 
     private let accent = Color(red: 0.91, green: 1.0, blue: 0.28)
     private let background = Color(red: 0.05, green: 0.05, blue: 0.06)
     private let surface = Color(red: 0.13, green: 0.13, blue: 0.15)
     private let border = Color(red: 0.20, green: 0.20, blue: 0.23)
     private let muted = Color(red: 0.45, green: 0.45, blue: 0.49)
+    private let commonNumerators = Array(1...12)
+    private let commonDenominators = [2, 4, 8, 16]
+    private let signatureDragStepDistance: CGFloat = 22
 
     var body: some View {
         Group {
@@ -45,14 +59,9 @@ struct ContentView: View {
                 commitFirstMeasureNumberText()
             }
         }
-        .onChange(of: isMeasureSignatureFocused) { _, isFocused in
-            if !isFocused {
-                commitMeasureEdit()
-            }
-        }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
-                if isFirstMeasureNumberFocused || isMeasureSignatureFocused {
+                if isFirstMeasureNumberFocused {
                     Spacer()
 
                     Button("Done") {
@@ -200,7 +209,6 @@ struct ContentView: View {
                 songIconButton("plus", label: "New song") {
                     metronome.createSong()
                     isSongPickerExpanded = false
-                    endMeasureEditing()
                 }
             }
 
@@ -213,13 +221,11 @@ struct ContentView: View {
                 songIconButton("doc.on.doc", label: "Duplicate song") {
                     metronome.duplicateCurrentSong()
                     isSongPickerExpanded = false
-                    endMeasureEditing()
                 }
 
                 songIconButton("arrow.counterclockwise", label: "Reset to built-in song") {
                     metronome.resetCurrentSongToBuiltIn()
                     isSongPickerExpanded = false
-                    endMeasureEditing()
                 }
                 .disabled(!metronome.canResetCurrentSongToBuiltIn)
                 .opacity(metronome.canResetCurrentSongToBuiltIn ? 1 : 0.35)
@@ -227,7 +233,6 @@ struct ContentView: View {
                 songIconButton("trash", label: "Delete song") {
                     metronome.deleteCurrentSong()
                     isSongPickerExpanded = false
-                    endMeasureEditing()
                 }
                 .disabled(metronome.songs.count <= 1)
                 .opacity(metronome.songs.count <= 1 ? 0.35 : 1)
@@ -253,7 +258,6 @@ struct ContentView: View {
                     withAnimation(.easeInOut(duration: 0.16)) {
                         isSongPickerExpanded = false
                     }
-                    endMeasureEditing()
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: song.id == metronome.currentSongID ? "checkmark" : "circle")
@@ -791,10 +795,7 @@ struct ContentView: View {
                 .frame(height: 1)
 
             Button {
-                if metronome.duplicateMeasure(at: index),
-                   metronome.sequence.indices.contains(index) {
-                    beginEditing(metronome.sequence[index])
-                }
+                _ = metronome.duplicateMeasure(at: index)
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 12, weight: .bold))
@@ -831,52 +832,172 @@ struct ContentView: View {
     }
 
     private func measureSignatureEditor(for measure: TimeSignature) -> some View {
-        Group {
-            if editingMeasureID == measure.id {
-                HStack(spacing: 6) {
-                    TextField("7/8", text: $editMeasureText)
-                        .keyboardType(.numbersAndPunctuation)
-                        .multilineTextAlignment(.center)
-                        .font(.system(size: 15, design: .monospaced))
-                        .foregroundStyle(.white)
-                        .frame(width: 58, height: 34)
-                        .background(background, in: RoundedRectangle(cornerRadius: 8))
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(invalidEditMeasure ? .red : border, lineWidth: 1))
-                        .focused($isMeasureSignatureFocused)
+        HStack(spacing: 5) {
+            signatureNumberControl(
+                value: currentMeasure(for: measure).numerator,
+                options: numeratorOptions(for: measure),
+                label: "Numerator",
+                measureID: measure.id,
+                component: .numerator,
+                stepAction: { stepNumerator(for: measure, direction: $0) }
+            )
 
-                    Button {
-                        finishMeasureEditing()
-                    } label: {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(background)
-                            .frame(width: 24, height: 24)
-                    }
-                    .buttonStyle(.plain)
-                    .background(accent, in: Circle())
-                    .accessibilityLabel("Apply time signature")
-                }
-                .frame(width: 94, alignment: .leading)
-            } else {
-                Button {
-                    beginEditing(measure)
-                } label: {
-                    Text(measure.label)
-                        .font(.system(size: 24, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.white)
-                        .frame(width: 64, alignment: .leading)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Edit time signature \(measure.label)")
+            Text("/")
+                .font(.system(size: 22, weight: .medium, design: .monospaced))
+                .foregroundStyle(muted)
+                .frame(width: 10)
+
+            signatureNumberControl(
+                value: currentMeasure(for: measure).denominator,
+                options: denominatorOptions(for: measure),
+                label: "Denominator",
+                measureID: measure.id,
+                component: .denominator,
+                stepAction: { stepDenominator(for: measure, direction: $0) }
+            )
+        }
+        .frame(width: 100, height: 44, alignment: .center)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Time signature \(measure.label)")
+    }
+
+    private func signatureNumberControl(
+        value: Int,
+        options: [Int],
+        label: String,
+        measureID: UUID,
+        component: SignatureComponent,
+        stepAction: @escaping (Int) -> Void
+    ) -> some View {
+        let dragID = SignatureDrag(measureID: measureID, component: component)
+        let isActive = activeSignatureDrag == dragID
+
+        return VStack(spacing: -1) {
+            Text("\(adjacentValue(to: value, in: options, direction: 1))")
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(muted.opacity(isActive ? 0.70 : 0.38))
+                .monospacedDigit()
+                .frame(width: 42, height: 10)
+            Text("\(value)")
+                .font(.system(size: 20, weight: .medium, design: .monospaced))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .frame(width: 42, height: 22)
+                .background(
+                    (isActive ? accent.opacity(0.22) : Color.white.opacity(0.08)),
+                    in: Capsule()
+                )
+                .overlay(Capsule().stroke(isActive ? accent.opacity(0.55) : .clear, lineWidth: 1))
+            Text("\(adjacentValue(to: value, in: options, direction: -1))")
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(muted.opacity(isActive ? 0.70 : 0.38))
+                .monospacedDigit()
+                .frame(width: 42, height: 10)
+        }
+        .frame(width: 44, height: 44)
+        .contentShape(Rectangle())
+        .gesture(signatureDragGesture(dragID: dragID, stepAction: stepAction))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(label) \(value)")
+        .accessibilityValue(options.map(String.init).joined(separator: ", "))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                stepAction(1)
+            case .decrement:
+                stepAction(-1)
+            @unknown default:
+                break
             }
         }
+    }
+
+    private func signatureDragGesture(
+        dragID: SignatureDrag,
+        stepAction: @escaping (Int) -> Void
+    ) -> some Gesture {
+        DragGesture(minimumDistance: 6, coordinateSpace: .local)
+            .onChanged { value in
+                if activeSignatureDrag != dragID {
+                    activeSignatureDrag = dragID
+                    signatureDragStep = 0
+                }
+
+                let rawStep = -value.translation.height / signatureDragStepDistance
+                let step = Int(rawStep.rounded(.towardZero))
+                let delta = step - signatureDragStep
+                guard delta != 0 else { return }
+
+                signatureDragStep = step
+                stepAction(delta)
+                selectionFeedback()
+            }
+            .onEnded { _ in
+                activeSignatureDrag = nil
+                signatureDragStep = 0
+            }
+    }
+
+    private func stepNumerator(for measure: TimeSignature, direction: Int) {
+        let current = currentMeasure(for: measure)
+        updateMeasure(
+            measure,
+            numerator: steppedValue(current.numerator, in: numeratorOptions(for: measure), direction: direction),
+            denominator: current.denominator
+        )
+    }
+
+    private func stepDenominator(for measure: TimeSignature, direction: Int) {
+        let current = currentMeasure(for: measure)
+        updateMeasure(
+            measure,
+            numerator: current.numerator,
+            denominator: steppedValue(current.denominator, in: denominatorOptions(for: measure), direction: direction)
+        )
+    }
+
+    private func adjacentValue(to value: Int, in options: [Int], direction: Int) -> Int {
+        steppedValue(value, in: options, direction: direction)
+    }
+
+    private func steppedValue(_ value: Int, in options: [Int], direction: Int) -> Int {
+        guard let index = options.firstIndex(of: value), !options.isEmpty else {
+            return value
+        }
+        return options[(index + direction + options.count) % options.count]
+    }
+
+    private func selectionFeedback() {
+        #if os(iOS)
+        UISelectionFeedbackGenerator().selectionChanged()
+        #endif
+    }
+
+    private func currentMeasure(for measure: TimeSignature) -> TimeSignature {
+        metronome.sequence.first { $0.id == measure.id } ?? measure
+    }
+
+    private func numeratorOptions(for measure: TimeSignature) -> [Int] {
+        sortedOptions(commonNumerators, including: currentMeasure(for: measure).numerator)
+    }
+
+    private func denominatorOptions(for measure: TimeSignature) -> [Int] {
+        sortedOptions(commonDenominators, including: currentMeasure(for: measure).denominator)
+    }
+
+    private func sortedOptions(_ options: [Int], including currentValue: Int) -> [Int] {
+        Array(Set(options + [currentValue])).sorted()
+    }
+
+    private func updateMeasure(_ measure: TimeSignature, numerator: Int, denominator: Int) {
+        _ = metronome.updateMeasure(measure, numerator: numerator, denominator: denominator)
     }
 
     private func finishKeyboardEditing() {
         if isFirstMeasureNumberFocused {
             isFirstMeasureNumberFocused = false
-        } else if isMeasureSignatureFocused {
-            finishMeasureEditing()
         }
     }
 
@@ -904,67 +1025,6 @@ struct ContentView: View {
 
         updateFirstMeasureNumber(from: firstMeasureNumberText)
         firstMeasureNumberText = "\(metronome.startMeasureNumber)"
-    }
-
-    private func finishMeasureEditing() {
-        commitMeasureEdit()
-        if editingMeasureID == nil {
-            isMeasureSignatureFocused = false
-        }
-    }
-
-    private func beginEditing(_ measure: TimeSignature) {
-        editingMeasureID = measure.id
-        editMeasureText = measure.label
-        invalidEditMeasure = false
-        isMeasureSignatureFocused = true
-    }
-
-    private func endMeasureEditing() {
-        editingMeasureID = nil
-        editMeasureText = ""
-        invalidEditMeasure = false
-        isMeasureSignatureFocused = false
-    }
-
-    private func commitMeasureEdit() {
-        guard let editingMeasureID,
-              let measure = metronome.sequence.first(where: { $0.id == editingMeasureID })
-        else {
-            return
-        }
-
-        guard let signature = parseMeasureSignature(editMeasureText) else {
-            invalidEditMeasure = true
-            isMeasureSignatureFocused = true
-            return
-        }
-
-        invalidEditMeasure = false
-        _ = metronome.updateMeasure(
-            measure,
-            numerator: signature.numerator,
-            denominator: signature.denominator
-        )
-        self.editingMeasureID = nil
-        isMeasureSignatureFocused = false
-    }
-
-    private func parseMeasureSignature(_ text: String) -> (numerator: Int, denominator: Int)? {
-        let parts = text
-            .split(separator: "/", omittingEmptySubsequences: false)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-
-        guard parts.count == 2,
-              let numerator = Int(parts[0]),
-              let denominator = Int(parts[1]),
-              (1...24).contains(numerator),
-              (1...64).contains(denominator)
-        else {
-            return nil
-        }
-
-        return (numerator, denominator)
     }
 
     private func dotFill(for beat: Int) -> Color {

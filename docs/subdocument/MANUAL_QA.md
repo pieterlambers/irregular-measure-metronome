@@ -61,11 +61,12 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 
 ## Measure Editing
 
-- Edit a measure to a valid signature like `5/8`.
-- Edit a measure with grouping like `7/8 2+2+3`, if the UI exposes grouping for that measure.
-- Try invalid values such as `0/4`, `3/5`, or a grouping that does not sum to the numerator.
-- Confirm invalid edits do not corrupt the sequence.
-- Insert a measure.
+- Confirm every measure row shows compact numerator and denominator controls without opening a separate editor.
+- Drag vertically on the numerator and denominator controls to step to a common signature like `5/8`, and confirm the measure updates immediately.
+- Drag elsewhere in the sequence list and confirm the list scrolls without accidentally changing the signature.
+- Edit a measure with grouping like `7/8 2+2+3`, if the grouping picker exposes that preset for the measure.
+- Change the numerator after setting grouping and confirm invalid grouping is cleared instead of corrupting the sequence.
+- Insert a measure and confirm the inserted measure has the same compact signature controls as the other rows.
 - Delete a measure.
 - Confirm the final remaining measure cannot be deleted.
 
@@ -83,7 +84,7 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 - Test portrait orientation.
 - Confirm the transport controls, BPM, beat dots, pendulum, loop controls, and sequence list are all reachable.
 - Confirm text fields do not overlap controls when the keyboard is visible.
-- Confirm the keyboard Done button commits edits.
+- Confirm the keyboard Done button commits text-field edits such as the first measure number.
 - Confirm the played measure scrolls into view during playback.
 - Test Dynamic Type at a larger text size and confirm critical controls remain usable.
 
@@ -93,7 +94,7 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 - Confirm the left playback panel and right sequence area fit without overlap.
 - Confirm sequence grid/list scrolling keeps the active measure visible.
 - Confirm inline pickers and text fields are reachable with touch.
-- If using an external keyboard, confirm text editing still commits when focus leaves fields.
+- If using an external keyboard, confirm text fields such as song name and first measure number still commit when focus leaves fields.
 
 ## Screenshots
 

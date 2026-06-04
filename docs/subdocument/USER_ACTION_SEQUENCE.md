@@ -208,23 +208,18 @@ sequenceDiagram
             Model->>Timer: cancel flashTask
         end
         Model-->>View: publish updated sequence
-        View->>View: open inline editor for inserted measure
-        User->>View: Enter time signature text such as 7/8
-        User->>View: Tap row checkmark, keyboard Done, or move focus away
-        View->>View: parse numerator/denominator and validate ranges 1...24 / 1...64
-        alt Inputs are invalid
-            View->>View: mark inline time signature field invalid
-        else Inputs are valid
-            View->>Model: updateMeasure(measure, numerator, denominator)
-            Model->>Model: update TimeSignature and clean invalid grouping
-            Model->>Defaults: save encoded song library
-            alt Playback is running
-                Model->>Model: stop()
-                Model->>Engine: stop buffered scheduling
-                Model->>Timer: cancel flashTask
-            end
-            Model-->>View: publish updated sequence
+        View->>View: show inserted measure with compact drag-adjustable signature controls
+        User->>View: Drag vertically on numerator or denominator
+        View->>View: step through common musical values like a small wheel
+        View->>Model: updateMeasure(measure, numerator, denominator)
+        Model->>Model: update TimeSignature and clean invalid grouping
+        Model->>Defaults: save encoded song library
+        alt Playback is running
+            Model->>Model: stop()
+            Model->>Engine: stop buffered scheduling
+            Model->>Timer: cancel flashTask
         end
+        Model-->>View: publish updated sequence
     end
 
     rect rgb(35, 35, 40)

@@ -44,6 +44,8 @@ The tests live in:
 - clearing grouping when a measure update makes it invalid;
 - stopping playback when the sequence changes.
 
+The compact time signature controls in `ContentView` reuse `updateMeasure(_:numerator:denominator:)`, so the existing unit tests remain focused on model validation and side effects. Control-specific behavior, such as common musical value choices, drag thresholds, scroll interaction, and immediate updates from the numerator/denominator drag controls, belongs in manual QA or a future UI test target.
+
 ### Loop Ranges
 
 `MetronomeModelLoopRangeTests` covers measure-number and loop-boundary behavior:
