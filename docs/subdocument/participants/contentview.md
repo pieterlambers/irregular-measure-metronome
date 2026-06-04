@@ -20,7 +20,7 @@
 - Provides a keyboard `Done` action for text-field numeric editors such as the first displayed measure number.
 - Lets the user choose curated grouping presets per measure from an inline row picker instead of tapping the small dots directly.
 - Disables delete actions when the sequence has only one measure.
-- Uses `FlowLayout` to wrap main beat dots and compact sequence dots, with visual markers for downbeats and configured subaccents.
+- Keeps the main beat dots on one responsive row while using `FlowLayout` to wrap compact sequence dots, with visual markers for downbeats and configured subaccents.
 - Highlights rows that are inside the enabled loop range and marks the loop start/end rows.
 - Highlights the measure currently being played with a stronger card treatment, using `MetronomeModel.isPlayedMeasure(index:)` so count-in beats do not mark a sequence measure as active.
 - Auto-scrolls the sequence list/grid during playback so the highlighted played measure remains visible.

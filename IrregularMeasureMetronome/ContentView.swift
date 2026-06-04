@@ -406,16 +406,25 @@ struct ContentView: View {
     }
 
     private var beatDots: some View {
-        FlowLayout(spacing: 10, lineSpacing: 10) {
-            ForEach(0..<metronome.currentMeasure.numerator, id: \.self) { beat in
-                Circle()
-                    .fill(dotFill(for: beat))
-                    .stroke(dotStroke(for: beat), lineWidth: 1.5)
-                    .frame(width: dotSize(for: beat), height: dotSize(for: beat))
-                    .animation(.easeOut(duration: 0.06), value: metronome.currentBeat)
+        GeometryReader { proxy in
+            let numerator = metronome.currentMeasure.numerator
+            let scale = beatDotScale(for: numerator, availableWidth: proxy.size.width)
+            let spacing = beatDotSpacing(scale: scale)
+
+            HStack(spacing: spacing) {
+                ForEach(0..<numerator, id: \.self) { beat in
+                    let size = dotSize(for: beat) * scale
+
+                    Circle()
+                        .fill(dotFill(for: beat))
+                        .stroke(dotStroke(for: beat), lineWidth: 1.5)
+                        .frame(width: size, height: size)
+                        .animation(.easeOut(duration: 0.06), value: metronome.currentBeat)
+                }
             }
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
         }
-        .frame(minHeight: 48)
+        .frame(height: 48)
         .padding(.horizontal, 24)
         .padding(.bottom, 14)
     }
@@ -1245,6 +1254,20 @@ struct ContentView: View {
             return metronome.currentMeasure.isSubaccented(beat: beat) ? 38 : 34
         }
         return beat == 0 ? 44 : 40
+    }
+
+    private func beatDotScale(for numerator: Int, availableWidth: CGFloat) -> CGFloat {
+        guard numerator > 0, availableWidth > 0 else { return 1 }
+
+        let reservedDotWidth = CGFloat(numerator) * 44
+        let reservedSpacingWidth = CGFloat(max(0, numerator - 1)) * 10
+        let requiredWidth = reservedDotWidth + reservedSpacingWidth
+
+        return min(1, availableWidth / requiredWidth)
+    }
+
+    private func beatDotSpacing(scale: CGFloat) -> CGFloat {
+        max(3, 10 * scale)
     }
 
     private func miniDotFill(measureIndex index: Int, measure: TimeSignature, beat: Int) -> Color {
