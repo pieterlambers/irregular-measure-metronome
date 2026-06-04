@@ -14,6 +14,10 @@ struct ContentView: View {
     @State private var expandedGroupingMeasureID: UUID?
     @State private var activeSignatureDrag: SignatureDrag?
     @State private var signatureDragStep = 0
+    @State private var lastSignatureFeedbackTime = Date.distantPast
+    #if os(iOS)
+    @State private var signatureFeedbackGenerator = UISelectionFeedbackGenerator()
+    #endif
     @FocusState private var isFirstMeasureNumberFocused: Bool
 
     private enum SignatureComponent: Equatable {
@@ -34,6 +38,7 @@ struct ContentView: View {
     private let commonNumerators = Array(1...12)
     private let commonDenominators = [2, 4, 8, 16]
     private let signatureDragStepDistance: CGFloat = 22
+    private let minimumSignatureFeedbackInterval: TimeInterval = 1.0 / 24.0
 
     private var isCompactWidth: Bool {
         horizontalSizeClass != .regular
@@ -1103,6 +1108,7 @@ struct ContentView: View {
                 if activeSignatureDrag != dragID {
                     activeSignatureDrag = dragID
                     signatureDragStep = 0
+                    prepareSelectionFeedback()
                 }
 
                 let rawStep = -value.translation.height / signatureDragStepDistance
@@ -1117,6 +1123,7 @@ struct ContentView: View {
             .onEnded { _ in
                 activeSignatureDrag = nil
                 signatureDragStep = 0
+                prepareSelectionFeedback()
             }
     }
 
@@ -1151,7 +1158,20 @@ struct ContentView: View {
 
     private func selectionFeedback() {
         #if os(iOS)
-        UISelectionFeedbackGenerator().selectionChanged()
+        let now = Date()
+        guard now.timeIntervalSince(lastSignatureFeedbackTime) >= minimumSignatureFeedbackInterval else {
+            return
+        }
+
+        lastSignatureFeedbackTime = now
+        signatureFeedbackGenerator.selectionChanged()
+        signatureFeedbackGenerator.prepare()
+        #endif
+    }
+
+    private func prepareSelectionFeedback() {
+        #if os(iOS)
+        signatureFeedbackGenerator.prepare()
         #endif
     }
 
