@@ -325,7 +325,6 @@ final class MetronomeModelPlaybackTests: XCTestCase {
         XCTAssertEqual(model.currentBeat, -1)
         XCTAssertEqual(model.currentMeasureIndex, 0)
         XCTAssertEqual(model.loopCount, 1)
-        XCTAssertEqual(model.pendulumDirection, 0)
 
         let start = harness.clickEngine.starts.last
         XCTAssertEqual(start?.bpm, 148)
@@ -350,7 +349,6 @@ final class MetronomeModelPlaybackTests: XCTestCase {
         XCTAssertFalse(model.isPlaying)
         XCTAssertEqual(model.currentBeat, -1)
         XCTAssertFalse(model.isCountingIn)
-        XCTAssertEqual(model.pendulumDirection, 0)
         XCTAssertFalse(model.flashBPM)
         XCTAssertEqual(harness.clickEngine.stopCount, initialStopCount + 1)
     }
@@ -386,11 +384,10 @@ final class MetronomeModelPlaybackTests: XCTestCase {
         XCTAssertEqual(model.loopCount, 2)
         XCTAssertTrue(model.isCountingIn)
         XCTAssertTrue(model.flashBPM)
-        XCTAssertEqual(model.pendulumDirection, 1)
 
         harness.clickEngine.starts.last?.onBeat(1, 4, 2, false)
         await Task.yield()
-        XCTAssertEqual(model.pendulumDirection, -1)
+        XCTAssertEqual(model.currentBeat, 4)
         XCTAssertFalse(model.isCountingIn)
     }
 

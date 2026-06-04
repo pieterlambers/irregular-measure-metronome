@@ -9,6 +9,8 @@ struct ContentView: View {
     @EnvironmentObject private var metronome: MetronomeModel
     @State private var firstMeasureNumberText = ""
     @State private var isSongPickerExpanded = false
+    @State private var isCompactMeasureFocusEnabled = false
+    @State private var isCompactSequenceSettingsExpanded = false
     @State private var expandedGroupingMeasureID: UUID?
     @State private var activeSignatureDrag: SignatureDrag?
     @State private var signatureDragStep = 0
@@ -32,6 +34,10 @@ struct ContentView: View {
     private let commonNumerators = Array(1...12)
     private let commonDenominators = [2, 4, 8, 16]
     private let signatureDragStepDistance: CGFloat = 22
+
+    private var isCompactWidth: Bool {
+        horizontalSizeClass != .regular
+    }
 
     var body: some View {
         Group {
@@ -75,18 +81,27 @@ struct ContentView: View {
     private var compactLayout: some View {
         VStack(spacing: 0) {
             header
-            songControls
-            tempo
-            slider
-            beatDots
-            pendulum
-            controls
-            loopIndicator
+
+            if isCompactMeasureFocusEnabled {
+                compactMeasureFocusTransport
+            } else {
+                songControls
+                compactTempo
+                beatDots
+                compactControls
+                loopIndicator
+            }
+
             sequenceScroller {
                 VStack(spacing: 0) {
-                    sequenceHeader
-                    measureNumberControls
-                    loopRangeControls
+                    compactSequenceHeader
+
+                    if isCompactSequenceSettingsExpanded {
+                        measureNumberControls
+                        loopRangeControls
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+
                     sequenceList
                 }
             }
@@ -103,7 +118,6 @@ struct ContentView: View {
                     tempo
                     slider
                     beatDots
-                    pendulum
                     controls
                     loopIndicator
                 }
@@ -353,6 +367,39 @@ struct ContentView: View {
         .padding(.bottom, 12)
     }
 
+    private var compactTempo: some View {
+        VStack(spacing: 7) {
+            HStack(alignment: .center, spacing: 10) {
+                Text("\(metronome.bpm)")
+                    .font(.system(size: 34, weight: .light, design: .monospaced))
+                    .foregroundStyle(metronome.flashBPM ? accent : .white)
+                    .monospacedDigit()
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("BPM")
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .tracking(1.2)
+                        .foregroundStyle(muted)
+
+                    Text(metronome.tempoName)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(accent)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            Slider(value: Binding(
+                get: { Double(metronome.bpm) },
+                set: { metronome.bpm = Int($0.rounded()) }
+            ), in: 20...300, step: 1)
+            .tint(accent)
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 10)
+    }
+
     private var beatDots: some View {
         FlowLayout(spacing: 10, lineSpacing: 10) {
             ForEach(0..<metronome.currentMeasure.numerator, id: \.self) { beat in
@@ -364,30 +411,6 @@ struct ContentView: View {
             }
         }
         .frame(minHeight: 48)
-        .padding(.horizontal, 24)
-        .padding(.bottom, 14)
-    }
-
-    private var pendulum: some View {
-        ZStack(alignment: .top) {
-            Rectangle()
-                .fill(border.opacity(0.8))
-                .frame(width: 2, height: 64)
-
-            VStack(spacing: 0) {
-                Rectangle()
-                    .fill(accent)
-                    .frame(width: 2, height: 58)
-
-                Circle()
-                    .fill(accent)
-                    .frame(width: 22, height: 22)
-                    .offset(y: -1)
-            }
-            .rotationEffect(.degrees(Double(metronome.pendulumDirection * 32)), anchor: .top)
-            .animation(.linear(duration: 0.08), value: metronome.pendulumDirection)
-        }
-        .frame(height: 70)
         .padding(.horizontal, 24)
         .padding(.bottom, 14)
     }
@@ -450,6 +473,107 @@ struct ContentView: View {
         .padding(.bottom, 14)
     }
 
+    private var compactControls: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Button {
+                    metronome.togglePlayback()
+                } label: {
+                    Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(background)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .background(accent, in: RoundedRectangle(cornerRadius: 12))
+
+                Button {
+                    metronome.tapTempo()
+                } label: {
+                    VStack(spacing: 1) {
+                        Text(metronome.tapTempoText)
+                            .font(.system(size: 15, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.white)
+
+                        Text("TEMPO")
+                            .font(.system(size: 9, weight: .medium, design: .monospaced))
+                            .tracking(0.9)
+                            .foregroundStyle(muted)
+                    }
+                    .frame(width: 88, height: 48)
+                }
+                .buttonStyle(.plain)
+                .background(surface, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1))
+            }
+
+            Toggle(isOn: $metronome.isCountInFourFourEnabled) {
+                HStack(spacing: 8) {
+                    Image(systemName: "metronome")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(accent)
+
+                    Text("count-in 4/4")
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .tracking(1.0)
+                        .foregroundStyle(muted)
+                        .textCase(.uppercase)
+                }
+            }
+            .tint(accent)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(surface, in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(metronome.isCountInFourFourEnabled ? accent.opacity(0.55) : border, lineWidth: 1))
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 10)
+    }
+
+    private var compactMeasureFocusTransport: some View {
+        HStack(spacing: 8) {
+            Button {
+                metronome.togglePlayback()
+            } label: {
+                Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(background)
+                    .frame(width: 46, height: 42)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .background(accent, in: RoundedRectangle(cornerRadius: 10))
+
+            Text("\(metronome.bpm) BPM")
+                .font(.system(size: 14, weight: .medium, design: .monospaced))
+                .foregroundStyle(metronome.flashBPM ? accent : .white)
+                .monospacedDigit()
+                .lineLimit(1)
+
+            Spacer(minLength: 0)
+
+            Button {
+                metronome.tapTempo()
+            } label: {
+                Text(metronome.tapTempoText)
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .frame(width: 58, height: 36)
+            }
+            .buttonStyle(.plain)
+            .background(surface, in: RoundedRectangle(cornerRadius: 9))
+            .overlay(RoundedRectangle(cornerRadius: 9).stroke(border, lineWidth: 1))
+
+            Text("L\(metronome.loopCount)")
+                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .foregroundStyle(muted)
+                .monospacedDigit()
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 8)
+    }
+
     private var sequenceHeader: some View {
         Text("sequence")
             .font(.system(size: 10, weight: .medium, design: .monospaced))
@@ -501,6 +625,59 @@ struct ContentView: View {
         .padding(.vertical, 10)
         .background(surface, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1))
+        .padding(.horizontal, 24)
+        .padding(.bottom, 8)
+    }
+
+    private var compactSequenceHeader: some View {
+        HStack(spacing: 8) {
+            Text("sequence")
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .tracking(1.6)
+                .foregroundStyle(muted)
+                .textCase(.uppercase)
+
+            Text("\(metronome.sequence.count)")
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(accent)
+                .monospacedDigit()
+
+            Spacer(minLength: 0)
+
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    isCompactSequenceSettingsExpanded.toggle()
+                }
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(isCompactSequenceSettingsExpanded ? accent : muted)
+                    .frame(width: 34, height: 30)
+            }
+            .buttonStyle(.plain)
+            .background(surface, in: RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(isCompactSequenceSettingsExpanded ? accent.opacity(0.55) : border, lineWidth: 1))
+            .accessibilityLabel("Sequence settings")
+
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    isCompactMeasureFocusEnabled.toggle()
+                    if isCompactMeasureFocusEnabled {
+                        isSongPickerExpanded = false
+                        isFirstMeasureNumberFocused = false
+                    }
+                }
+            } label: {
+                Image(systemName: isCompactMeasureFocusEnabled ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(isCompactMeasureFocusEnabled ? accent : muted)
+                    .frame(width: 34, height: 30)
+            }
+            .buttonStyle(.plain)
+            .background(surface, in: RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(isCompactMeasureFocusEnabled ? accent.opacity(0.55) : border, lineWidth: 1))
+            .accessibilityLabel(isCompactMeasureFocusEnabled ? "Exit see all measures" : "See all measures")
+        }
         .padding(.horizontal, 24)
         .padding(.bottom, 8)
     }
@@ -576,7 +753,7 @@ struct ContentView: View {
     }
 
     private var sequenceList: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: isCompactWidth ? 4 : 6) {
             insertionControl(at: 0)
 
             ForEach(Array(metronome.sequence.enumerated()), id: \.element.id) { index, measure in
@@ -616,6 +793,7 @@ struct ContentView: View {
 
     private func measureCard(for measure: TimeSignature, at index: Int) -> some View {
         let isCurrentPlaybackMeasure = metronome.isPlayedMeasure(index: index)
+        let cornerRadius: CGFloat = isCompactWidth ? 10 : 14
 
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
@@ -657,15 +835,15 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, isCompactWidth ? 10 : 14)
+        .padding(.vertical, isCompactWidth ? 9 : 12)
         .id(measure.id)
         .background(
             isCurrentPlaybackMeasure ? accent.opacity(0.14) : surface,
-            in: RoundedRectangle(cornerRadius: 14)
+            in: RoundedRectangle(cornerRadius: cornerRadius)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: cornerRadius)
                 .stroke(
                     isCurrentPlaybackMeasure ? accent : border,
                     lineWidth: isCurrentPlaybackMeasure ? 2.5 : 1.5
@@ -789,7 +967,9 @@ struct ContentView: View {
     }
 
     private func insertionControl(at index: Int) -> some View {
-        HStack(spacing: 8) {
+        let buttonSize: CGFloat = isCompactWidth ? 24 : 28
+
+        return HStack(spacing: 8) {
             Rectangle()
                 .fill(border)
                 .frame(height: 1)
@@ -800,7 +980,7 @@ struct ContentView: View {
                 Image(systemName: "plus")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(accent)
-                    .frame(width: 28, height: 28)
+                    .frame(width: buttonSize, height: buttonSize)
             }
             .buttonStyle(.plain)
             .background(background, in: Circle())

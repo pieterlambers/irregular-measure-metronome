@@ -129,7 +129,6 @@ final class MetronomeModel: ObservableObject {
 
     @Published private(set) var tapTempoText = "TAP"
     @Published private(set) var flashBPM = false
-    @Published private(set) var pendulumDirection = 0
 
     private let compositionStorageKey = "metro.composition.v2"
     private let legacySequenceStorageKey = "metro.sequence.v1"
@@ -329,7 +328,6 @@ final class MetronomeModel: ObservableObject {
         currentMeasureIndex = activeLoopStartIndex
         loopCount = 1
         isCountingIn = false
-        pendulumDirection = 0
         startPlayback(
             measureIndex: activeLoopStartIndex,
             beat: 0,
@@ -346,7 +344,6 @@ final class MetronomeModel: ObservableObject {
         flashBPM = false
         currentBeat = -1
         isCountingIn = false
-        pendulumDirection = 0
     }
 
     func tapTempo() {
@@ -514,7 +511,6 @@ final class MetronomeModel: ObservableObject {
         currentMeasureIndex = activeLoopStartIndex
         loopCount = 1
         isCountingIn = false
-        pendulumDirection = 0
         startPlayback(
             measureIndex: activeLoopStartIndex,
             beat: 0,
@@ -558,7 +554,6 @@ final class MetronomeModel: ObservableObject {
         self.loopCount = loopCount
         isCountingIn = isCountIn
         flash()
-        pendulumDirection = pendulumDirection == 0 ? 1 : -pendulumDirection
     }
 
     private func flash() {
@@ -630,7 +625,6 @@ final class MetronomeModel: ObservableObject {
         currentBeat = -1
         loopCount = 1
         isCountingIn = false
-        pendulumDirection = 0
         isApplyingSong = false
     }
 

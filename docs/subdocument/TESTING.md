@@ -66,7 +66,7 @@ The compact time signature controls in `ContentView` reuse `updateMeasure(_:nume
 - `stop()` clears transient playback state and stops the click engine;
 - BPM changes while playing restart playback from the current position;
 - count-in enabled playback starts with four count-in beats;
-- fake beat callbacks update visible playback state, flash state, and pendulum direction;
+- fake beat callbacks update visible playback state and flash state;
 - the played-measure highlight predicate is false before the first sequence beat, false during count-in, true for the audible current sequence measure, and false after stop;
 - stale beat callbacks from previous playback generations are ignored.
 

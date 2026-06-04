@@ -10,7 +10,7 @@ This document describes the buffered audio scheduling behavior in the latest com
 
 ## Playback Start
 
-1. `MetronomeModel.start()` resets `currentBeat`, `currentMeasureIndex`, `loopCount`, `isCountingIn`, and `pendulumDirection`.
+1. `MetronomeModel.start()` resets `currentBeat`, `currentMeasureIndex`, `loopCount`, and `isCountingIn`.
 2. `MetronomeModel.startPlayback(measureIndex:beat:loopCount:)` increments `playbackGeneration`.
 3. `MetronomeModel` calls `ClickEngine.start(...)` with the current BPM, sequence, starting position, loop count, optional four-beat 4/4 count-in, and an `onBeat` callback.
 4. `ClickEngine.start(...)` prepares playback by lazily creating the audio engine and player node when needed, activating the audio session, starting the engine, cancelling any previous scheduler, creating a new scheduling generation, normalizing the starting playback state, stopping the player node, filling the initial audio queue, and then starting the player node.
@@ -46,8 +46,7 @@ This callback is used for UI state, not for audio playback. When it fires, `Metr
 - ignores callbacks when playback is stopped;
 - updates `currentMeasureIndex`, `currentBeat`, and `loopCount`;
 - updates `isCountingIn` while count-in beats are being reflected in the UI;
-- triggers the short BPM flash;
-- flips `pendulumDirection`.
+- triggers the short BPM flash.
 
 ## Restart and Stop Behavior
 
@@ -55,7 +54,7 @@ This callback is used for UI state, not for audio playback. When it fires, `Metr
 - The restart keeps the current measure, current beat, and loop count, increments the model playback generation, and starts a fresh `ClickEngine` scheduling generation.
 - `ClickEngine` generation checks prevent stale scheduler work and stale callbacks from updating the model after a restart.
 - Audio session interruptions and route changes reactivate the audio session and engine, then resume the player when playback should continue.
-- `MetronomeModel.stop()` increments `playbackGeneration`, tells `ClickEngine` to stop, cancels flash state, resets `currentBeat` to `-1`, and resets `pendulumDirection` to `0`.
+- `MetronomeModel.stop()` increments `playbackGeneration`, tells `ClickEngine` to stop, cancels flash state, resets `currentBeat` to `-1`, and clears count-in state.
 - Inserting or deleting a measure persists the updated sequence and stops playback when it was running.
 
 ## Maintenance Notes

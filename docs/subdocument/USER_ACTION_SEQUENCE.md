@@ -124,7 +124,7 @@ sequenceDiagram
         Model->>Engine: stop()
         Engine->>Queue: cancel scheduler and stop player
         Model->>Timer: cancel flashTask
-        Model->>Model: reset currentBeat and pendulumDirection
+        Model->>Model: reset currentBeat and count-in state
         Model-->>View: publish stopped state
     end
 

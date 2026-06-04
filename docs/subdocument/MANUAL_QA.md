@@ -82,7 +82,9 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 ## iPhone Layout
 
 - Test portrait orientation.
-- Confirm the transport controls, BPM, beat dots, pendulum, loop controls, and sequence list are all reachable.
+- Confirm the transport controls, BPM, beat dots, loop controls, and sequence list are all reachable.
+- Enable the measure-focused sequence mode and confirm many more measures are visible while play/pause, BPM, tap tempo, and loop count remain reachable.
+- Expand and collapse sequence settings and confirm first-measure and loop-range controls remain usable.
 - Confirm text fields do not overlap controls when the keyboard is visible.
 - Confirm the keyboard Done button commits text-field edits such as the first measure number.
 - Confirm the played measure scrolls into view during playback.
