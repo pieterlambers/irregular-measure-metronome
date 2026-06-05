@@ -96,6 +96,8 @@ sequenceDiagram
         Model-->>View: publish updated song list and current song
     end
 
+    Note over User,Queue: Actors: User | View = ContentView | Model = MetronomeModel | Engine = ClickEngine | Defaults = UserDefaults | Timer = Task.sleep | Queue = scheduler queue
+
     rect rgb(236, 236, 255)
         Note over User,Timer: Play
         User->>View: Tap play button
@@ -137,6 +139,8 @@ sequenceDiagram
         Model->>Model: reset currentBeat and count-in state
         Model-->>View: publish stopped state
     end
+
+    Note over User,Queue: Actors: User | View = ContentView | Model = MetronomeModel | Engine = ClickEngine | Defaults = UserDefaults | Timer = Task.sleep | Queue = scheduler queue
 
     rect rgb(236, 236, 255)
         Note over User,Timer: Change BPM
@@ -220,6 +224,8 @@ sequenceDiagram
         end
     end
 
+    Note over User,Queue: Actors: User | View = ContentView | Model = MetronomeModel | Engine = ClickEngine | Defaults = UserDefaults | Timer = Task.sleep | Queue = scheduler queue
+
     rect rgb(236, 236, 255)
         Note over User,Defaults: Duplicate Local Measure and Edit Inline
         User->>View: Tap insert button at a sequence boundary
@@ -270,6 +276,8 @@ sequenceDiagram
             Model-->>View: publish updated sequence and grouping label
         end
     end
+
+    Note over User,Queue: Actors: User | View = ContentView | Model = MetronomeModel | Engine = ClickEngine | Defaults = UserDefaults | Timer = Task.sleep | Queue = scheduler queue
 
     rect rgb(236, 236, 255)
         Note over User,Defaults: Delete Measure
