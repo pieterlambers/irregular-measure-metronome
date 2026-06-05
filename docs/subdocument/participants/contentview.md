@@ -17,7 +17,7 @@
 - Lets the user type or step the first displayed measure number while keeping all rows consecutive.
 - Lets the user enable a loop range and set inclusive `from` / `to` measure numbers.
 - Lets the user insert a measure at any sequence boundary by copying the local context: before the first row copies the first measure, and other boundaries copy the previous measure.
-- Lets the user adjust numerator and denominator directly in every measure row by dragging vertically on compact number controls.
+- Lets the user adjust numerator and denominator directly in every measure row by dragging vertically on compact number controls, with an active readout that keeps the selected value visible during the drag.
 - Provides a keyboard `Done` action for text-field numeric editors such as the first displayed measure number.
 - Lets the user choose curated grouping presets per measure from an inline row picker instead of tapping the small dots directly.
 - Disables delete actions when the sequence has only one measure.

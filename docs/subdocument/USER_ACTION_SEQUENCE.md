@@ -239,7 +239,7 @@ sequenceDiagram
             Model-->>View: publish updated sequence
             View->>View: show inserted measure with compact drag-adjustable signature controls
             User->>View: Drag vertically on numerator or denominator
-            View->>View: step through common musical values like a small wheel
+            View->>View: step through common musical values like a small wheel and keep the active value visible above the drag point
             View->>Model: updateMeasure(measure, numerator, denominator)
             Model->>Model: update TimeSignature and clean invalid grouping
             Model->>Defaults: save encoded song library

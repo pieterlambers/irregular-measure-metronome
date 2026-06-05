@@ -66,7 +66,7 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 ## Measure Editing
 
 - Confirm every measure row shows compact numerator and denominator controls without opening a separate editor.
-- Drag vertically on the numerator and denominator controls to step to a common signature like `5/8`, and confirm the measure updates immediately.
+- Drag vertically on the numerator and denominator controls to step to a common signature like `5/8`, and confirm the measure updates immediately while the active value remains visible in the floating readout above the finger.
 - Drag elsewhere in the sequence list and confirm the list scrolls without accidentally changing the signature.
 - Edit a measure with grouping like `7/8 2+2+3`, if the grouping picker exposes that preset for the measure.
 - Change the numerator after setting grouping and confirm invalid grouping is cleared instead of corrupting the sequence.

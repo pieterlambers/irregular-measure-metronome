@@ -37,7 +37,9 @@ struct ContentView: View {
     private let muted = Color(red: 0.45, green: 0.45, blue: 0.49)
     private let commonNumerators = Array(1...12)
     private let commonDenominators = [2, 4, 8, 16]
-    private let signatureDragStepDistance: CGFloat = 22
+    private let signatureNumberControlWidth: CGFloat = 48
+    private let signatureNumberControlHeight: CGFloat = 62
+    private let signatureDragStepDistance: CGFloat = 28
     private let minimumSignatureFeedbackInterval: TimeInterval = 1.0 / 24.0
 
     private var isCompactWidth: Bool {
@@ -844,7 +846,7 @@ struct ContentView: View {
         let cornerRadius: CGFloat = isCompactWidth ? 10 : 14
 
         return VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
+            HStack(spacing: isCompactWidth ? 6 : 10) {
                 measureNumberLabel(forIndex: index, isCurrentPlaybackMeasure: isCurrentPlaybackMeasure)
 
                 measureSignatureEditor(for: measure)
@@ -860,7 +862,7 @@ struct ContentView: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(muted)
-                        .frame(width: 32, height: 32)
+                        .frame(width: isCompactWidth ? 30 : 32, height: isCompactWidth ? 30 : 32)
                 }
                 .buttonStyle(.plain)
                 .disabled(!metronome.canEditCurrentSong || metronome.sequence.count <= 1)
@@ -934,7 +936,7 @@ struct ContentView: View {
                     .foregroundStyle(accent)
             }
         }
-        .frame(width: 52, alignment: .leading)
+        .frame(width: isCompactWidth ? 44 : 52, alignment: .leading)
     }
 
     private func groupingMenu(for measure: TimeSignature) -> some View {
@@ -953,7 +955,7 @@ struct ContentView: View {
                     .font(.system(size: 9, weight: .bold))
             }
             .foregroundStyle(measure.validGrouping == nil ? muted : accent)
-            .frame(minWidth: 78, minHeight: 36)
+            .frame(minWidth: isCompactWidth ? 62 : 78, minHeight: 36)
             .padding(.horizontal, 8)
             .background(background, in: RoundedRectangle(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(border, lineWidth: 1))
@@ -1065,7 +1067,7 @@ struct ContentView: View {
     }
 
     private func measureSignatureEditor(for measure: TimeSignature) -> some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 4) {
             signatureNumberControl(
                 value: currentMeasure(for: measure).numerator,
                 options: numeratorOptions(for: measure),
@@ -1078,7 +1080,7 @@ struct ContentView: View {
             Text("/")
                 .font(.system(size: 22, weight: .medium, design: .monospaced))
                 .foregroundStyle(muted)
-                .frame(width: 10)
+                .frame(width: 8)
 
             signatureNumberControl(
                 value: currentMeasure(for: measure).denominator,
@@ -1089,7 +1091,7 @@ struct ContentView: View {
                 stepAction: { stepDenominator(for: measure, direction: $0) }
             )
         }
-        .frame(width: 100, height: 44, alignment: .center)
+        .frame(width: 112, height: signatureNumberControlHeight, alignment: .center)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Time signature \(measure.label)")
     }
@@ -1105,31 +1107,53 @@ struct ContentView: View {
         let dragID = SignatureDrag(measureID: measureID, component: component)
         let isActive = activeSignatureDrag == dragID
 
-        return VStack(spacing: -1) {
-            Text("\(adjacentValue(to: value, in: options, direction: 1))")
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundStyle(muted.opacity(isActive ? 0.70 : 0.38))
-                .monospacedDigit()
-                .frame(width: 42, height: 10)
-            Text("\(value)")
-                .font(.system(size: 20, weight: .medium, design: .monospaced))
-                .foregroundStyle(.white)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .frame(width: 42, height: 22)
-                .background(
-                    (isActive ? accent.opacity(0.22) : Color.white.opacity(0.08)),
-                    in: Capsule()
-                )
-                .overlay(Capsule().stroke(isActive ? accent.opacity(0.55) : .clear, lineWidth: 1))
-            Text("\(adjacentValue(to: value, in: options, direction: -1))")
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundStyle(muted.opacity(isActive ? 0.70 : 0.38))
-                .monospacedDigit()
-                .frame(width: 42, height: 10)
+        return ZStack(alignment: .top) {
+            VStack(spacing: 2) {
+                Text("\(adjacentValue(to: value, in: options, direction: 1))")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundStyle(muted.opacity(isActive ? 0.76 : 0.42))
+                    .monospacedDigit()
+                    .frame(width: signatureNumberControlWidth, height: 14)
+
+                Text("\(value)")
+                    .font(.system(size: 23, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .frame(width: signatureNumberControlWidth, height: 30)
+                    .background(
+                        (isActive ? accent.opacity(0.24) : Color.white.opacity(0.08)),
+                        in: Capsule()
+                    )
+                    .overlay(Capsule().stroke(isActive ? accent.opacity(0.65) : .clear, lineWidth: 1))
+
+                Text("\(adjacentValue(to: value, in: options, direction: -1))")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundStyle(muted.opacity(isActive ? 0.76 : 0.42))
+                    .monospacedDigit()
+                    .frame(width: signatureNumberControlWidth, height: 14)
+            }
+            .frame(width: signatureNumberControlWidth, height: signatureNumberControlHeight)
+
+            if isActive {
+                Text("\(value)")
+                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                    .foregroundStyle(background)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                    .frame(width: 54, height: 30)
+                    .background(accent, in: Capsule())
+                    .overlay(Capsule().stroke(.white.opacity(0.35), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.35), radius: 8, y: 4)
+                    .offset(y: -38)
+                    .transition(.scale(scale: 0.9).combined(with: .opacity))
+                    .allowsHitTesting(false)
+            }
         }
-        .frame(width: 44, height: 44)
+        .frame(width: signatureNumberControlWidth, height: signatureNumberControlHeight)
+        .animation(.easeOut(duration: 0.10), value: isActive)
         .contentShape(Rectangle())
         .gesture(signatureDragGesture(dragID: dragID, stepAction: stepAction))
         .allowsHitTesting(metronome.canEditCurrentSong)
