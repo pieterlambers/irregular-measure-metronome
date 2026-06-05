@@ -45,7 +45,12 @@ struct Song: Identifiable, Codable, Equatable, Sendable {
     var sequence: [TimeSignature]
     var loopRange: PersistedLoopRange?
     var countInFourFourEnabled: Bool?
+    var isReadOnly: Bool?
     var updatedAt: Date = Date()
+
+    var readOnly: Bool {
+        isReadOnly ?? false
+    }
 }
 
 @MainActor
@@ -54,6 +59,13 @@ final class MetronomeModel: ObservableObject {
     @Published private(set) var currentSongID = UUID()
     @Published var currentSongName = "" {
         didSet {
+            guard !isRevertingReadOnlyChange else { return }
+            if isCurrentSongReadOnly, !isApplyingSong {
+                isRevertingReadOnlyChange = true
+                currentSongName = oldValue
+                isRevertingReadOnlyChange = false
+                return
+            }
             let limitedName = String(currentSongName.prefix(60))
             if currentSongName != limitedName {
                 currentSongName = limitedName
@@ -65,6 +77,13 @@ final class MetronomeModel: ObservableObject {
 
     @Published var startMeasureNumber: Int = 1 {
         didSet {
+            guard !isRevertingReadOnlyChange else { return }
+            if isCurrentSongReadOnly, !isApplyingSong {
+                isRevertingReadOnlyChange = true
+                startMeasureNumber = oldValue
+                isRevertingReadOnlyChange = false
+                return
+            }
             let clamped = startMeasureNumber.clamped(to: 0...9999)
             if startMeasureNumber != clamped {
                 startMeasureNumber = clamped
@@ -76,6 +95,13 @@ final class MetronomeModel: ObservableObject {
 
     @Published var bpm: Int = 120 {
         didSet {
+            guard !isRevertingReadOnlyChange else { return }
+            if isCurrentSongReadOnly, !isApplyingSong {
+                isRevertingReadOnlyChange = true
+                bpm = oldValue
+                isRevertingReadOnlyChange = false
+                return
+            }
             let clamped = min(300, max(20, bpm))
             if bpm != clamped {
                 bpm = clamped
@@ -95,6 +121,13 @@ final class MetronomeModel: ObservableObject {
     @Published private(set) var isCountingIn = false
     @Published var isCountInFourFourEnabled = false {
         didSet {
+            guard !isRevertingReadOnlyChange else { return }
+            if isCurrentSongReadOnly, !isApplyingSong {
+                isRevertingReadOnlyChange = true
+                isCountInFourFourEnabled = oldValue
+                isRevertingReadOnlyChange = false
+                return
+            }
             guard oldValue != isCountInFourFourEnabled else { return }
             saveCurrentSong()
             restartPlaybackAtLoopStartIfNeeded()
@@ -102,6 +135,13 @@ final class MetronomeModel: ObservableObject {
     }
     @Published var isLoopRangeEnabled = false {
         didSet {
+            guard !isRevertingReadOnlyChange else { return }
+            if isCurrentSongReadOnly, !isApplyingSong {
+                isRevertingReadOnlyChange = true
+                isLoopRangeEnabled = oldValue
+                isRevertingReadOnlyChange = false
+                return
+            }
             guard oldValue != isLoopRangeEnabled else { return }
             saveCurrentSong()
             restartPlaybackAtLoopStartIfNeeded()
@@ -111,6 +151,13 @@ final class MetronomeModel: ObservableObject {
     @Published private(set) var loopEndIndex = 0
     @Published var sequence: [TimeSignature] = [] {
         didSet {
+            guard !isRevertingReadOnlyChange else { return }
+            if isCurrentSongReadOnly, !isApplyingSong {
+                isRevertingReadOnlyChange = true
+                sequence = oldValue
+                isRevertingReadOnlyChange = false
+                return
+            }
             let hadFullDisabledLoopRange = !isLoopRangeEnabled
                 && loopStartIndex == 0
                 && loopEndIndex >= max(0, oldValue.count - 1)
@@ -142,6 +189,7 @@ final class MetronomeModel: ObservableObject {
     private var tapTimes: [Date] = []
     private var playbackGeneration = 0
     private var isApplyingSong = false
+    private var isRevertingReadOnlyChange = false
 
     private static let defaultSequence = [
         TimeSignature(numerator: 7, denominator: 8, grouping: [2, 2, 3]),
@@ -214,6 +262,14 @@ final class MetronomeModel: ObservableObject {
         Self.builtInSongs.contains { $0.id == currentSongID }
     }
 
+    var isCurrentSongReadOnly: Bool {
+        currentSong.readOnly
+    }
+
+    var canEditCurrentSong: Bool {
+        !isCurrentSongReadOnly
+    }
+
     func selectSong(_ song: Song) {
         guard song.id != currentSongID else { return }
         guard let storedSong = songs.first(where: { $0.id == song.id }) else { return }
@@ -238,6 +294,7 @@ final class MetronomeModel: ObservableObject {
         var song = currentSong
         song.id = UUID()
         song.name = nextCopyName(for: song.name)
+        song.isReadOnly = false
         song.updatedAt = Date()
         song.sequence = song.sequence.map {
             TimeSignature(
@@ -253,6 +310,7 @@ final class MetronomeModel: ObservableObject {
 
     func resetCurrentSongToBuiltIn() {
         guard var builtInSong = Self.builtInSongs.first(where: { $0.id == currentSongID }) else { return }
+        builtInSong.isReadOnly = true
         builtInSong.updatedAt = Date()
         if let index = songs.firstIndex(where: { $0.id == builtInSong.id }) {
             songs[index] = builtInSong
@@ -260,6 +318,17 @@ final class MetronomeModel: ObservableObject {
             songs.append(builtInSong)
         }
         applySong(builtInSong, savePreviousSong: false)
+        saveSongLibrary()
+    }
+
+    func setCurrentSongReadOnly(_ isReadOnly: Bool) {
+        var song = currentSongSnapshot(isReadOnly: isReadOnly)
+        song.updatedAt = Date()
+        if let index = songs.firstIndex(where: { $0.id == currentSongID }) {
+            songs[index] = song
+        } else {
+            songs.append(song)
+        }
         saveSongLibrary()
     }
 
@@ -290,6 +359,7 @@ final class MetronomeModel: ObservableObject {
     }
 
     func updateLoopStartMeasureNumber(_ measureNumber: Int) {
+        guard canEditCurrentSong else { return }
         guard !sequence.isEmpty else { return }
         let index = index(forMeasureNumber: measureNumber)
             .clamped(to: 0...loopEndIndex)
@@ -300,6 +370,7 @@ final class MetronomeModel: ObservableObject {
     }
 
     func updateLoopEndMeasureNumber(_ measureNumber: Int) {
+        guard canEditCurrentSong else { return }
         guard !sequence.isEmpty else { return }
         let index = index(forMeasureNumber: measureNumber)
             .clamped(to: loopStartIndex...(sequence.count - 1))
@@ -347,6 +418,7 @@ final class MetronomeModel: ObservableObject {
     }
 
     func tapTempo() {
+        guard canEditCurrentSong else { return }
         let tapTime = now()
         tapTimes.append(tapTime)
         if tapTimes.count > 8 {
@@ -375,6 +447,7 @@ final class MetronomeModel: ObservableObject {
     }
 
     func insertMeasure(after measure: TimeSignature, numerator: Int, denominator: Int) -> Bool {
+        guard canEditCurrentSong else { return false }
         guard let index = sequence.firstIndex(where: { $0.id == measure.id }) else {
             return false
         }
@@ -382,6 +455,7 @@ final class MetronomeModel: ObservableObject {
     }
 
     func insertMeasure(at index: Int, numerator: Int, denominator: Int) -> Bool {
+        guard canEditCurrentSong else { return false }
         guard (1...24).contains(numerator), (1...64).contains(denominator) else {
             return false
         }
@@ -395,6 +469,7 @@ final class MetronomeModel: ObservableObject {
     }
 
     func duplicateMeasure(at index: Int) -> Bool {
+        guard canEditCurrentSong else { return false }
         guard !sequence.isEmpty else { return false }
         let templateIndex = index == 0 ? 0 : (index - 1).clamped(to: 0...(sequence.count - 1))
         let template = sequence[templateIndex]
@@ -411,6 +486,7 @@ final class MetronomeModel: ObservableObject {
     }
 
     func deleteMeasure(_ measure: TimeSignature) {
+        guard canEditCurrentSong else { return }
         guard sequence.count > 1 else { return }
         sequence.removeAll { $0.id == measure.id }
         if isPlaying {
@@ -419,6 +495,7 @@ final class MetronomeModel: ObservableObject {
     }
 
     func updateMeasure(_ measure: TimeSignature, numerator: Int, denominator: Int) -> Bool {
+        guard canEditCurrentSong else { return false }
         guard (1...24).contains(numerator), (1...64).contains(denominator),
               let index = sequence.firstIndex(where: { $0.id == measure.id })
         else {
@@ -435,6 +512,7 @@ final class MetronomeModel: ObservableObject {
     }
 
     func updateGrouping(for measure: TimeSignature, grouping: [Int]?) {
+        guard canEditCurrentSong else { return }
         guard let index = sequence.firstIndex(where: { $0.id == measure.id }) else { return }
         let cleaned = Self.cleanGrouping(grouping, numerator: sequence[index].numerator)
         guard sequence[index].grouping != cleaned else { return }
@@ -570,8 +648,20 @@ final class MetronomeModel: ObservableObject {
 
     private func saveCurrentSong() {
         guard !isApplyingSong else { return }
+        guard canEditCurrentSong else { return }
+        let song = currentSongSnapshot(isReadOnly: false)
+
+        if let index = songs.firstIndex(where: { $0.id == currentSongID }) {
+            songs[index] = song
+        } else {
+            songs.append(song)
+        }
+        saveSongLibrary()
+    }
+
+    private func currentSongSnapshot(isReadOnly: Bool) -> Song {
         let cleanSequence = Self.cleanSequence(sequence)
-        let song = Song(
+        return Song(
             id: currentSongID,
             name: Self.cleanSongName(currentSongName),
             bpm: bpm.clamped(to: 20...300),
@@ -583,15 +673,9 @@ final class MetronomeModel: ObservableObject {
                 endIndex: loopEndIndex.clamped(to: 0...max(0, cleanSequence.count - 1))
             ),
             countInFourFourEnabled: isCountInFourFourEnabled,
+            isReadOnly: isReadOnly,
             updatedAt: Date()
         )
-
-        if let index = songs.firstIndex(where: { $0.id == currentSongID }) {
-            songs[index] = song
-        } else {
-            songs.append(song)
-        }
-        saveSongLibrary()
     }
 
     private func saveSongLibrary() {
@@ -651,7 +735,8 @@ final class MetronomeModel: ObservableObject {
                 startMeasureNumber: decoded.startMeasureNumber.clamped(to: 0...9999),
                 sequence: cleanSequence(decoded.sequence),
                 loopRange: decoded.loopRange,
-                countInFourFourEnabled: false
+                countInFourFourEnabled: false,
+                isReadOnly: false
             )
             return PersistedSongLibrary(currentSongID: song.id, songs: cleanSongs([song]))
         }
@@ -664,7 +749,8 @@ final class MetronomeModel: ObservableObject {
                 startMeasureNumber: 1,
                 sequence: cleanSequence(decoded),
                 loopRange: nil,
-                countInFourFourEnabled: false
+                countInFourFourEnabled: false,
+                isReadOnly: false
             )
             return PersistedSongLibrary(currentSongID: song.id, songs: cleanSongs([song]))
         }
@@ -688,6 +774,7 @@ final class MetronomeModel: ObservableObject {
                 sequence: sequence,
                 loopRange: song.loopRange,
                 countInFourFourEnabled: song.countInFourFourEnabled ?? false,
+                isReadOnly: song.isReadOnly ?? builtInSongs.contains { $0.id == song.id },
                 updatedAt: song.updatedAt
             )
         }
@@ -737,7 +824,8 @@ final class MetronomeModel: ObservableObject {
             startMeasureNumber: 1,
             sequence: defaultSequence,
             loopRange: nil,
-            countInFourFourEnabled: false
+            countInFourFourEnabled: false,
+            isReadOnly: false
         )
     }
 

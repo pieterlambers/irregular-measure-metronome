@@ -50,14 +50,18 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 ## Song Library
 
 - Rename the current song.
+- Lock the current song and confirm the name, tempo, count-in, first-measure, loop, grouping, insert, delete, and signature controls become disabled while Play/Stop remains usable.
+- Unlock the current song and confirm editing works again.
+- Select each built-in song and confirm it is read-only by default.
 - Create a new song.
-- Duplicate a song.
+- Duplicate a read-only song and confirm the copy is editable.
 - Expand the inline song picker and switch between songs.
+- Confirm read-only songs show a lock indicator in the inline song picker.
 - Confirm the inline song picker collapses after selecting, creating, duplicating, resetting, or deleting a song.
 - Delete a non-current or duplicate song if available.
 - Force quit and relaunch the app.
-- Confirm song names, BPM, sequence edits, loop range, start measure, and count-in setting persist.
-- Reset a built-in song and confirm it returns to its original sequence.
+- Confirm song names, BPM, sequence edits, loop range, start measure, count-in setting, and read-only state persist.
+- Reset a built-in song and confirm it returns to its original sequence and read-only state.
 
 ## Measure Editing
 

@@ -607,6 +607,78 @@ final class SongLibraryPersistenceTests: XCTestCase {
         XCTAssertEqual(model.songs.filter { $0.id == ForestForTheTreesSong.measure446To472ID }.count, 1)
     }
 
+    func testBuiltInSongsDefaultToReadOnly() throws {
+        let userDefaults = makeUserDefaults()
+        var editedBuiltIn = ForestForTheTreesSong.measure446To472
+        editedBuiltIn.isReadOnly = nil
+        let library = PersistedSongLibrary(
+            currentSongID: editedBuiltIn.id,
+            songs: [editedBuiltIn]
+        )
+        try store(library, in: userDefaults, key: "metro.songLibrary.v1")
+
+        let model = MetronomeModel(clickEngine: FakeClickEngine(), userDefaults: userDefaults)
+
+        XCTAssertTrue(model.isCurrentSongReadOnly)
+        XCTAssertTrue(model.songs.first { $0.id == ForestForTheTreesSong.measure105To136ID }?.readOnly ?? false)
+        XCTAssertTrue(model.songs.first { $0.id == ForestForTheTreesSong.measure446To472ID }?.readOnly ?? false)
+    }
+
+    func testReadOnlySongRejectsEditsUntilUnlocked() {
+        let harness = ModelHarness()
+        let model = harness.model
+        let originalName = model.currentSongName
+        let originalBPM = model.bpm
+        let originalStartMeasure = model.startMeasureNumber
+        let originalSequence = model.sequence
+
+        model.setCurrentSongReadOnly(true)
+
+        model.currentSongName = "Locked Edit"
+        model.bpm = 160
+        model.startMeasureNumber = 12
+        model.isCountInFourFourEnabled = true
+        model.isLoopRangeEnabled = true
+        model.updateLoopStartMeasureNumber(2)
+        model.updateLoopEndMeasureNumber(2)
+        XCTAssertFalse(model.insertMeasure(at: 0, numerator: 5, denominator: 8))
+        XCTAssertFalse(model.duplicateMeasure(at: 1))
+        XCTAssertFalse(model.updateMeasure(model.sequence[0], numerator: 6, denominator: 8))
+        model.updateGrouping(for: model.sequence[0], grouping: [3, 2, 2])
+        model.deleteMeasure(model.sequence[0])
+        model.tapTempo()
+
+        XCTAssertEqual(model.currentSongName, originalName)
+        XCTAssertEqual(model.bpm, originalBPM)
+        XCTAssertEqual(model.startMeasureNumber, originalStartMeasure)
+        XCTAssertFalse(model.isCountInFourFourEnabled)
+        XCTAssertFalse(model.isLoopRangeEnabled)
+        XCTAssertEqual(model.loopStartIndex, 0)
+        XCTAssertEqual(model.loopEndIndex, originalSequence.count - 1)
+        XCTAssertEqual(model.sequence, originalSequence)
+        XCTAssertEqual(model.tapTempoText, "TAP")
+
+        model.setCurrentSongReadOnly(false)
+
+        model.currentSongName = "Unlocked Edit"
+        model.bpm = 160
+
+        XCTAssertEqual(model.currentSongName, "Unlocked Edit")
+        XCTAssertEqual(model.bpm, 160)
+    }
+
+    func testDuplicateOfReadOnlySongIsEditable() {
+        let harness = ModelHarness()
+        let model = harness.model
+        model.setCurrentSongReadOnly(true)
+
+        model.duplicateCurrentSong()
+
+        XCTAssertFalse(model.isCurrentSongReadOnly)
+        model.currentSongName = "Editable Copy"
+        XCTAssertEqual(model.currentSongName, "Editable Copy")
+    }
+
     func testFallsBackToDefaultSongWhenStoredSongsAreInvalid() throws {
         let userDefaults = makeUserDefaults()
         let library = PersistedSongLibrary(

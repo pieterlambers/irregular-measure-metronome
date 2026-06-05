@@ -217,13 +217,22 @@ struct ContentView: View {
                 TextField("Song name", text: $metronome.currentSongName)
                     .textInputAutocapitalization(.words)
                     .disableAutocorrection(true)
+                    .disabled(!metronome.canEditCurrentSong)
                     .font(.system(size: 18, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(metronome.canEditCurrentSong ? .white : muted)
                     .padding(.horizontal, 12)
                     .frame(height: 38)
                     .background(background, in: RoundedRectangle(cornerRadius: 10))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(border, lineWidth: 1))
                     .accessibilityLabel("Song name")
+
+                songIconButton(
+                    metronome.isCurrentSongReadOnly ? "lock.fill" : "lock.open",
+                    label: metronome.isCurrentSongReadOnly ? "Unlock song" : "Lock song"
+                ) {
+                    metronome.setCurrentSongReadOnly(!metronome.isCurrentSongReadOnly)
+                    isFirstMeasureNumberFocused = false
+                }
 
                 songIconButton("plus", label: "New song") {
                     metronome.createSong()
@@ -291,6 +300,13 @@ struct ContentView: View {
                             .truncationMode(.tail)
 
                         Spacer(minLength: 0)
+
+                        if song.readOnly {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(muted)
+                                .accessibilityLabel("Read only")
+                        }
                     }
                     .frame(height: 34)
                     .padding(.horizontal, 10)
@@ -358,6 +374,8 @@ struct ContentView: View {
                 set: { metronome.bpm = Int($0.rounded()) }
             ), in: 20...300, step: 1)
             .tint(accent)
+            .disabled(!metronome.canEditCurrentSong)
+            .opacity(metronome.canEditCurrentSong ? 1 : 0.45)
 
             HStack {
                 Text("20")
@@ -400,6 +418,8 @@ struct ContentView: View {
                 set: { metronome.bpm = Int($0.rounded()) }
             ), in: 20...300, step: 1)
             .tint(accent)
+            .disabled(!metronome.canEditCurrentSong)
+            .opacity(metronome.canEditCurrentSong ? 1 : 0.45)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 10)
@@ -460,8 +480,10 @@ struct ContentView: View {
                     .frame(width: 96, height: 60)
                 }
                 .buttonStyle(.plain)
+                .disabled(!metronome.canEditCurrentSong)
                 .background(surface, in: RoundedRectangle(cornerRadius: 16))
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(border, lineWidth: 1))
+                .opacity(metronome.canEditCurrentSong ? 1 : 0.45)
             }
 
             Toggle(isOn: $metronome.isCountInFourFourEnabled) {
@@ -478,6 +500,7 @@ struct ContentView: View {
                 }
             }
             .tint(accent)
+            .disabled(!metronome.canEditCurrentSong)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(surface, in: RoundedRectangle(cornerRadius: 12))
@@ -518,8 +541,10 @@ struct ContentView: View {
                     .frame(width: 88, height: 48)
                 }
                 .buttonStyle(.plain)
+                .disabled(!metronome.canEditCurrentSong)
                 .background(surface, in: RoundedRectangle(cornerRadius: 12))
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1))
+                .opacity(metronome.canEditCurrentSong ? 1 : 0.45)
             }
 
             Toggle(isOn: $metronome.isCountInFourFourEnabled) {
@@ -536,6 +561,7 @@ struct ContentView: View {
                 }
             }
             .tint(accent)
+            .disabled(!metronome.canEditCurrentSong)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(surface, in: RoundedRectangle(cornerRadius: 10))
@@ -576,8 +602,10 @@ struct ContentView: View {
                     .frame(width: 58, height: 36)
             }
             .buttonStyle(.plain)
+            .disabled(!metronome.canEditCurrentSong)
             .background(surface, in: RoundedRectangle(cornerRadius: 9))
             .overlay(RoundedRectangle(cornerRadius: 9).stroke(border, lineWidth: 1))
+            .opacity(metronome.canEditCurrentSong ? 1 : 0.45)
 
             Text("L\(metronome.loopCount)")
                 .font(.system(size: 12, weight: .medium, design: .monospaced))
@@ -611,8 +639,9 @@ struct ContentView: View {
                 TextField("1", text: $firstMeasureNumberText)
                     .keyboardType(.numberPad)
                     .multilineTextAlignment(.trailing)
+                    .disabled(!metronome.canEditCurrentSong)
                     .font(.system(size: 14, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(metronome.canEditCurrentSong ? .white : muted)
                     .monospacedDigit()
                     .frame(width: 56, height: 30)
                     .padding(.horizontal, 8)
@@ -633,8 +662,10 @@ struct ContentView: View {
                 in: 0...9999
             )
             .labelsHidden()
+            .disabled(!metronome.canEditCurrentSong)
         }
         .tint(accent)
+        .opacity(metronome.canEditCurrentSong ? 1 : 0.55)
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(surface, in: RoundedRectangle(cornerRadius: 12))
@@ -710,6 +741,7 @@ struct ContentView: View {
                 Toggle("", isOn: $metronome.isLoopRangeEnabled)
                     .labelsHidden()
                     .tint(accent)
+                    .disabled(!metronome.canEditCurrentSong)
             }
 
             HStack(spacing: 10) {
@@ -732,6 +764,7 @@ struct ContentView: View {
                 )
             }
         }
+        .disabled(!metronome.canEditCurrentSong)
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(surface, in: RoundedRectangle(cornerRadius: 12))
@@ -760,6 +793,7 @@ struct ContentView: View {
             }
         }
         .tint(accent)
+        .disabled(!metronome.canEditCurrentSong)
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(background, in: RoundedRectangle(cornerRadius: 10))
@@ -829,8 +863,8 @@ struct ContentView: View {
                         .frame(width: 32, height: 32)
                 }
                 .buttonStyle(.plain)
-                .disabled(metronome.sequence.count <= 1)
-                .opacity(metronome.sequence.count <= 1 ? 0.35 : 1)
+                .disabled(!metronome.canEditCurrentSong || metronome.sequence.count <= 1)
+                .opacity(metronome.canEditCurrentSong && metronome.sequence.count > 1 ? 1 : 0.35)
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(border, lineWidth: 1))
             }
 
@@ -925,6 +959,8 @@ struct ContentView: View {
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(border, lineWidth: 1))
         }
         .buttonStyle(.plain)
+        .disabled(!metronome.canEditCurrentSong)
+        .opacity(metronome.canEditCurrentSong ? 1 : 0.45)
         .accessibilityLabel("Grouping \(measure.groupingLabel)")
     }
 
@@ -970,6 +1006,7 @@ struct ContentView: View {
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(isSelected ? accent.opacity(0.55) : border, lineWidth: 1))
         }
         .buttonStyle(.plain)
+        .disabled(!metronome.canEditCurrentSong)
         .accessibilityLabel(label)
     }
 
@@ -997,8 +1034,10 @@ struct ContentView: View {
                     .frame(width: buttonSize, height: buttonSize)
             }
             .buttonStyle(.plain)
+            .disabled(!metronome.canEditCurrentSong)
             .background(background, in: Circle())
             .overlay(Circle().stroke(border, lineWidth: 1))
+            .opacity(metronome.canEditCurrentSong ? 1 : 0.35)
             .accessibilityLabel("Insert measure here")
 
             Rectangle()
@@ -1093,10 +1132,13 @@ struct ContentView: View {
         .frame(width: 44, height: 44)
         .contentShape(Rectangle())
         .gesture(signatureDragGesture(dragID: dragID, stepAction: stepAction))
+        .allowsHitTesting(metronome.canEditCurrentSong)
+        .opacity(metronome.canEditCurrentSong ? 1 : 0.55)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(label) \(value)")
         .accessibilityValue(options.map(String.init).joined(separator: ", "))
         .accessibilityAdjustableAction { direction in
+            guard metronome.canEditCurrentSong else { return }
             switch direction {
             case .increment:
                 stepAction(1)
