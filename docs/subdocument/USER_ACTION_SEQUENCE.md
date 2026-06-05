@@ -20,7 +20,7 @@ sequenceDiagram
     participant Timer as Task.sleep
     participant Queue as ClickEngine scheduler queue
 
-    rect rgb(35, 35, 40)
+    rect rgb(236, 236, 255)
         Note over User,Defaults: Select Song
         User->>View: Tap song selector button
         View->>View: expand inline song picker
@@ -35,7 +35,7 @@ sequenceDiagram
         View->>View: collapse inline song picker
     end
 
-    rect rgb(35, 35, 40)
+    rect rgb(236, 236, 255)
         Note over User,Defaults: Rename Song
         User->>View: Edit song name field
         alt Current song is read-only
@@ -48,7 +48,7 @@ sequenceDiagram
         end
     end
 
-    rect rgb(35, 35, 40)
+    rect rgb(236, 236, 255)
         Note over User,Defaults: Create, Duplicate, Lock, Reset, or Delete Song
         alt Create song
             User->>View: Tap new song button
@@ -96,7 +96,7 @@ sequenceDiagram
         Model-->>View: publish updated song list and current song
     end
 
-    rect rgb(35, 35, 40)
+    rect rgb(236, 236, 255)
         Note over User,Timer: Play
         User->>View: Tap play button
         View->>Model: togglePlayback()
@@ -125,7 +125,7 @@ sequenceDiagram
         View->>View: highlight played measure and auto-scroll sequence pane to keep it visible
     end
 
-    rect rgb(35, 35, 40)
+    rect rgb(236, 236, 255)
         Note over User,Timer: Pause
         User->>View: Tap pause button
         View->>Model: togglePlayback()
@@ -138,7 +138,7 @@ sequenceDiagram
         Model-->>View: publish stopped state
     end
 
-    rect rgb(35, 35, 40)
+    rect rgb(236, 236, 255)
         Note over User,Timer: Change BPM
         User->>View: Drag BPM slider
         alt Current song is read-only
@@ -159,7 +159,7 @@ sequenceDiagram
         end
     end
 
-    rect rgb(35, 35, 40)
+    rect rgb(236, 236, 255)
         Note over User,Timer: Tap Tempo
         User->>View: Tap TEMPO button
         alt Current song is read-only
@@ -187,7 +187,7 @@ sequenceDiagram
         end
     end
 
-    rect rgb(35, 35, 40)
+    rect rgb(236, 236, 255)
         Note over User,Defaults: Change First Measure Number
         User->>View: Enter first measure number or adjust stepper
         alt Current song is read-only
@@ -202,7 +202,7 @@ sequenceDiagram
         end
     end
 
-    rect rgb(35, 35, 40)
+    rect rgb(236, 236, 255)
         Note over User,Defaults: Change Loop Range
         User->>View: Toggle loop range or adjust from/to steppers
         alt Current song is read-only
@@ -220,7 +220,7 @@ sequenceDiagram
         end
     end
 
-    rect rgb(35, 35, 40)
+    rect rgb(236, 236, 255)
         Note over User,Defaults: Duplicate Local Measure and Edit Inline
         User->>View: Tap insert button at a sequence boundary
         alt Current song is read-only
@@ -252,7 +252,7 @@ sequenceDiagram
         end
     end
 
-    rect rgb(35, 35, 40)
+    rect rgb(236, 236, 255)
         Note over User,Defaults: Change Measure Grouping
         User->>View: Expand inline grouping picker on a sequence row
         alt Current song is read-only
@@ -271,7 +271,7 @@ sequenceDiagram
         end
     end
 
-    rect rgb(35, 35, 40)
+    rect rgb(236, 236, 255)
         Note over User,Defaults: Delete Measure
         User->>View: Tap delete button on a sequence row
         alt Current song is read-only
