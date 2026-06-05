@@ -5,7 +5,6 @@ import UIKit
 #endif
 
 struct ContentView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var metronome: MetronomeModel
     @State private var firstMeasureNumberText = ""
     @State private var isSongPickerExpanded = false
@@ -37,22 +36,30 @@ struct ContentView: View {
     private let muted = Color(red: 0.45, green: 0.45, blue: 0.49)
     private let commonNumerators = Array(1...12)
     private let commonDenominators = [2, 4, 8, 16]
+    private let maxSplitContentWidth: CGFloat = 1180
+    private let splitOuterPadding: CGFloat = 12
+    private let splitSpacing: CGFloat = 24
+    private let minimumTransportWidth: CGFloat = 280
+    private let preferredTransportWidth: CGFloat = 320
+    private let sequenceHorizontalPadding: CGFloat = 24
+    private let sequenceGridSpacing: CGFloat = 16
+    private let minimumMeasureCardWidth: CGFloat = 320
+    private let narrowMeasureCardThreshold: CGFloat = 360
     private let signatureNumberControlWidth: CGFloat = 48
     private let signatureNumberControlHeight: CGFloat = 62
     private let signatureDragStepDistance: CGFloat = 28
     private let minimumSignatureFeedbackInterval: TimeInterval = 1.0 / 24.0
 
-    private var isCompactWidth: Bool {
-        horizontalSizeClass != .regular
-    }
-
     var body: some View {
-        Group {
-            if horizontalSizeClass == .regular {
-                regularWidthLayout
-            } else {
-                compactLayout
+        GeometryReader { proxy in
+            Group {
+                if canUseSplitLayout(totalWidth: proxy.size.width) {
+                    splitLayout(totalWidth: proxy.size.width)
+                } else {
+                    stackedLayout
+                }
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(background.ignoresSafeArea())
@@ -85,7 +92,7 @@ struct ContentView: View {
         }
     }
 
-    private var compactLayout: some View {
+    private var stackedLayout: some View {
         VStack(spacing: 0) {
             header
 
@@ -109,17 +116,21 @@ struct ContentView: View {
                             .transition(.opacity.combined(with: .move(edge: .top)))
                     }
 
-                    sequenceList
+                    adaptiveSequenceGrid(availableWidth: 0, forcedColumnCount: 1)
                 }
             }
         }
     }
 
-    private var regularWidthLayout: some View {
-        VStack(spacing: 0) {
+    private func splitLayout(totalWidth: CGFloat) -> some View {
+        let contentWidth = splitContentWidth(for: totalWidth)
+        let transportWidth = splitTransportWidth(for: contentWidth)
+        let sequenceWidth = max(0, contentWidth - transportWidth - splitSpacing)
+
+        return VStack(spacing: 0) {
             header
 
-            HStack(alignment: .top, spacing: 24) {
+            HStack(alignment: .top, spacing: splitSpacing) {
                 VStack(spacing: 0) {
                     songControls
                     tempo
@@ -128,22 +139,52 @@ struct ContentView: View {
                     controls
                     loopIndicator
                 }
-                .frame(width: 320)
+                .frame(width: transportWidth)
 
                 VStack(spacing: 0) {
                     sequenceHeader
                     measureNumberControls
                     loopRangeControls
                     sequenceScroller {
-                        sequenceGrid
+                        adaptiveSequenceGrid(availableWidth: sequenceWidth)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: sequenceWidth)
+                .frame(maxHeight: .infinity)
             }
-            .padding(.horizontal, 12)
-            .frame(maxWidth: 1180, maxHeight: .infinity)
+            .frame(width: contentWidth)
+            .frame(maxHeight: .infinity)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    private func splitContentWidth(for totalWidth: CGFloat) -> CGFloat {
+        max(0, min(totalWidth - (splitOuterPadding * 2), maxSplitContentWidth))
+    }
+
+    private func canUseSplitLayout(totalWidth: CGFloat) -> Bool {
+        splitContentWidth(for: totalWidth) >= minimumTransportWidth + splitSpacing + minimumMeasureCardWidth + (sequenceHorizontalPadding * 2)
+    }
+
+    private func splitTransportWidth(for contentWidth: CGFloat) -> CGFloat {
+        let roomAfterMinimumSequence = contentWidth - splitSpacing - minimumMeasureCardWidth - (sequenceHorizontalPadding * 2)
+        return min(preferredTransportWidth, max(minimumTransportWidth, roomAfterMinimumSequence))
+    }
+
+    private func sequenceColumnCount(for availableWidth: CGFloat, forcedColumnCount: Int? = nil) -> Int {
+        if let forcedColumnCount {
+            return forcedColumnCount
+        }
+
+        let cardAreaWidth = max(0, availableWidth - (sequenceHorizontalPadding * 2))
+        let fittingColumns = Int((cardAreaWidth + sequenceGridSpacing) / (minimumMeasureCardWidth + sequenceGridSpacing))
+        return min(2, max(1, fittingColumns))
+    }
+
+    private func sequenceColumnWidth(availableWidth: CGFloat, columnCount: Int) -> CGFloat {
+        let cardAreaWidth = max(0, availableWidth - (sequenceHorizontalPadding * 2))
+        let totalSpacing = CGFloat(max(0, columnCount - 1)) * sequenceGridSpacing
+        return max(0, (cardAreaWidth - totalSpacing) / CGFloat(max(1, columnCount)))
     }
 
     private func sequenceScroller<Content: View>(
@@ -802,56 +843,51 @@ struct ContentView: View {
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(border, lineWidth: 1))
     }
 
-    private var sequenceList: some View {
-        VStack(spacing: isCompactWidth ? 4 : 6) {
-            insertionControl(at: 0)
+    private func adaptiveSequenceGrid(availableWidth: CGFloat, forcedColumnCount: Int? = nil) -> some View {
+        let columnCount = sequenceColumnCount(for: availableWidth, forcedColumnCount: forcedColumnCount)
+        let columnWidth = sequenceColumnWidth(availableWidth: availableWidth, columnCount: columnCount)
+        let isNarrowCard = forcedColumnCount == 1 || columnWidth < narrowMeasureCardThreshold
+        let columns = Array(
+            repeating: GridItem(.flexible(), spacing: sequenceGridSpacing, alignment: .top),
+            count: columnCount
+        )
 
-            ForEach(Array(metronome.sequence.enumerated()), id: \.element.id) { index, measure in
-                measureCard(for: measure, at: index)
-
-                insertionControl(at: index + 1)
-            }
-        }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 12)
-    }
-
-    private var sequenceGrid: some View {
-        VStack(spacing: 6) {
-            insertionControl(at: 0)
+        return VStack(spacing: 6) {
+            insertionControl(at: 0, isNarrowCard: isNarrowCard)
 
             LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: 16, alignment: .top),
-                    GridItem(.flexible(), spacing: 16, alignment: .top)
-                ],
+                columns: columns,
                 alignment: .leading,
                 spacing: 10
             ) {
                 ForEach(Array(metronome.sequence.enumerated()), id: \.element.id) { index, measure in
                     VStack(spacing: 6) {
-                        measureCard(for: measure, at: index)
+                        measureCard(for: measure, at: index, isNarrowCard: isNarrowCard)
 
-                        insertionControl(at: index + 1)
+                        insertionControl(at: index + 1, isNarrowCard: isNarrowCard)
                     }
                 }
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, sequenceHorizontalPadding)
         .padding(.bottom, 12)
     }
 
-    private func measureCard(for measure: TimeSignature, at index: Int) -> some View {
+    private func measureCard(for measure: TimeSignature, at index: Int, isNarrowCard: Bool) -> some View {
         let isCurrentPlaybackMeasure = metronome.isPlayedMeasure(index: index)
-        let cornerRadius: CGFloat = isCompactWidth ? 10 : 14
+        let cornerRadius: CGFloat = isNarrowCard ? 10 : 14
 
         return VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: isCompactWidth ? 6 : 10) {
-                measureNumberLabel(forIndex: index, isCurrentPlaybackMeasure: isCurrentPlaybackMeasure)
+            HStack(spacing: isNarrowCard ? 6 : 10) {
+                measureNumberLabel(
+                    forIndex: index,
+                    isCurrentPlaybackMeasure: isCurrentPlaybackMeasure,
+                    isNarrowCard: isNarrowCard
+                )
 
                 measureSignatureEditor(for: measure)
 
-                groupingMenu(for: measure)
+                groupingMenu(for: measure, isNarrowCard: isNarrowCard)
 
                 Spacer(minLength: 0)
 
@@ -862,7 +898,7 @@ struct ContentView: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(muted)
-                        .frame(width: isCompactWidth ? 30 : 32, height: isCompactWidth ? 30 : 32)
+                        .frame(width: isNarrowCard ? 30 : 32, height: isNarrowCard ? 30 : 32)
                 }
                 .buttonStyle(.plain)
                 .disabled(!metronome.canEditCurrentSong || metronome.sequence.count <= 1)
@@ -885,8 +921,8 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, isCompactWidth ? 10 : 14)
-        .padding(.vertical, isCompactWidth ? 9 : 12)
+        .padding(.horizontal, isNarrowCard ? 10 : 14)
+        .padding(.vertical, isNarrowCard ? 9 : 12)
         .id(measure.id)
         .background(
             isCurrentPlaybackMeasure ? accent.opacity(0.14) : surface,
@@ -911,7 +947,11 @@ struct ContentView: View {
         .animation(.easeOut(duration: 0.08), value: isCurrentPlaybackMeasure)
     }
 
-    private func measureNumberLabel(forIndex index: Int, isCurrentPlaybackMeasure: Bool) -> some View {
+    private func measureNumberLabel(
+        forIndex index: Int,
+        isCurrentPlaybackMeasure: Bool,
+        isNarrowCard: Bool
+    ) -> some View {
         HStack(spacing: 3) {
             if metronome.isLoopRangeEnabled && index == metronome.loopStartIndex {
                 Image(systemName: "repeat")
@@ -936,10 +976,10 @@ struct ContentView: View {
                     .foregroundStyle(accent)
             }
         }
-        .frame(width: isCompactWidth ? 44 : 52, alignment: .leading)
+        .frame(width: isNarrowCard ? 44 : 52, alignment: .leading)
     }
 
-    private func groupingMenu(for measure: TimeSignature) -> some View {
+    private func groupingMenu(for measure: TimeSignature, isNarrowCard: Bool) -> some View {
         Button {
             withAnimation(.easeInOut(duration: 0.14)) {
                 expandedGroupingMeasureID = expandedGroupingMeasureID == measure.id ? nil : measure.id
@@ -955,7 +995,7 @@ struct ContentView: View {
                     .font(.system(size: 9, weight: .bold))
             }
             .foregroundStyle(measure.validGrouping == nil ? muted : accent)
-            .frame(minWidth: isCompactWidth ? 62 : 78, minHeight: 36)
+            .frame(minWidth: isNarrowCard ? 62 : 78, minHeight: 36)
             .padding(.horizontal, 8)
             .background(background, in: RoundedRectangle(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(border, lineWidth: 1))
@@ -1019,8 +1059,8 @@ struct ContentView: View {
         }
     }
 
-    private func insertionControl(at index: Int) -> some View {
-        let buttonSize: CGFloat = isCompactWidth ? 24 : 28
+    private func insertionControl(at index: Int, isNarrowCard: Bool) -> some View {
+        let buttonSize: CGFloat = isNarrowCard ? 24 : 28
 
         return HStack(spacing: 8) {
             Rectangle()

@@ -97,9 +97,11 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 ## iPad Layout
 
 - Test portrait and landscape orientation.
+- Resize iPad windows across narrow, one-column split, and two-column split widths.
 - Confirm the left playback panel and right sequence area fit without overlap.
-- Confirm sequence grid/list scrolling keeps the active measure visible.
+- Confirm sequence scrolling keeps the active measure visible with both one and two sequence columns.
 - Confirm inline pickers and text fields are reachable with touch.
+- Confirm long song names, large measure numbers, and larger Dynamic Type do not overlap controls at each width.
 - If using an external keyboard, confirm text fields such as song name and first measure number still commit when focus leaves fields.
 
 ## Screenshots

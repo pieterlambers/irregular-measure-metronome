@@ -4,9 +4,9 @@
 
 - Renders the complete SwiftUI interface for the metronome.
 - Reads published state from `MetronomeModel` through the environment object.
-- Switches between the compact single-column layout and the regular-width iPad layout based on `horizontalSizeClass`.
-- On compact screens, keeps song, compact tempo, beat visualization, playback controls, and loop status visible above a dedicated scrollable sequence pane, with an optional measure-focused mode that gives most of the screen to measure rows.
-- On regular-width screens, keeps song, tempo, beat visualization, and transport controls in a left column while rendering the sequence editor as a dedicated scrollable two-column measure grid on the wider right side.
+- Switches between stacked and split layouts based on available width, and chooses one or two sequence columns from the measured sequence width.
+- In the stacked layout, keeps song, compact tempo, beat visualization, playback controls, and loop status visible above a dedicated scrollable sequence pane, with an optional measure-focused mode that gives most of the screen to measure rows.
+- In the split layout, keeps song, tempo, beat visualization, and transport controls in a left column while rendering the sequence editor as a dedicated scrollable one- or two-column measure grid on the right side.
 - Displays song selection, naming, and lock controls, tempo, tempo name, beat dots, playback controls, count-in control, sequence rows, active playback measure highlighting, compact drag-adjustable time signature controls, grouping pickers, start measure number, loop range controls, and loop count.
 - Converts UI events into model calls and bindings: `selectSong(_:)`, `createSong()`, `duplicateCurrentSong()`, `setCurrentSongReadOnly(_:)`, `resetCurrentSongToBuiltIn()`, `deleteCurrentSong()`, `togglePlayback()`, `isCountInFourFourEnabled`, `tapTempo()`, `duplicateMeasure(at:)`, `updateMeasure(_:numerator:denominator:)`, `updateGrouping(for:grouping:)`, `updateLoopStartMeasureNumber(_:)`, `updateLoopEndMeasureNumber(_:)`, and `deleteMeasure(_:)`.
 - Limits compact time signature control choices to common musical numerator and denominator values before forwarding measure updates.
