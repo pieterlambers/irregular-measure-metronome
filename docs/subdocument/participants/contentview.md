@@ -19,7 +19,7 @@
 - Lets the user insert a measure at any sequence boundary by copying the local context: before the first row copies the first measure, and other boundaries copy the previous measure.
 - Lets the user adjust numerator and denominator directly in every measure row by dragging vertically on compact number controls, with an active readout that keeps the selected value visible during the drag.
 - Provides a keyboard `Done` action for text-field numeric editors such as the first displayed measure number.
-- Lets the user choose curated grouping presets per measure from an inline row picker instead of tapping the small dots directly.
+- Lets the user choose meaningful multi-part grouping presets per measure from an inline row picker instead of tapping the small dots directly, omitting single-group choices that behave the same as `None`.
 - Disables delete actions when the sequence has only one measure.
 - Keeps the main beat dots on one responsive row while using `FlowLayout` to wrap compact sequence dots, with visual markers for downbeats and configured subaccents.
 - Highlights rows that are inside the enabled loop range and marks the loop start/end rows.

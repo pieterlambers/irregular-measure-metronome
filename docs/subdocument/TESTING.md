@@ -16,7 +16,8 @@ The tests live in:
 
 - `label` renders as `numerator/denominator`.
 - `groupingLabel` renders valid groupings as `2+2+3`, otherwise `None`.
-- `validGrouping` accepts only multi-part, positive groupings that sum to the numerator.
+- `validGrouping` accepts only meaningful multi-part groupings with group sizes from `1...4` that sum to the numerator.
+- `groupingPresets(for:)` omits single-group choices like `2`, `3`, or `4` because they are equivalent to `None`, while preserving useful generated and curated multi-part options.
 - `isSubaccented(beat:)` returns true only for internal group starts, such as beats `2` and `4` in `7/8 [2, 2, 3]`.
 
 ### Playback Cursor

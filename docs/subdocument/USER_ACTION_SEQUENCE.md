@@ -291,9 +291,9 @@ sequenceDiagram
         alt Current song is read-only
             View->>View: grouping picker is disabled
         else Current song is editable
-            User->>View: Choose None or a grouping preset
+            User->>View: Choose None or a meaningful multi-part grouping preset
             View->>Model: updateGrouping(for, grouping)
-            Model->>Model: validate grouping sums to numerator
+            Model->>Model: validate grouping is multi-part, uses supported group sizes, and sums to numerator
             Model->>Defaults: save encoded song library
             alt Playback is running
                 Model->>Model: stop()

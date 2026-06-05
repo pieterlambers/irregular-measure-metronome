@@ -15,7 +15,28 @@ final class TimeSignatureTests: XCTestCase {
         XCTAssertNil(TimeSignature(numerator: 7, denominator: 8, grouping: [7]).validGrouping)
         XCTAssertNil(TimeSignature(numerator: 7, denominator: 8, grouping: [2, 0, 5]).validGrouping)
         XCTAssertNil(TimeSignature(numerator: 7, denominator: 8, grouping: [2, -1, 6]).validGrouping)
+        XCTAssertNil(TimeSignature(numerator: 7, denominator: 8, grouping: [5, 2]).validGrouping)
         XCTAssertNil(TimeSignature(numerator: 7, denominator: 8, grouping: [3, 3]).validGrouping)
+    }
+
+    func testGroupingPresetsDoNotIncludeSingleGroupEquivalentsOfNone() {
+        XCTAssertEqual(TimeSignature.groupingPresets(for: 2), [])
+        XCTAssertEqual(TimeSignature.groupingPresets(for: 3), [])
+        XCTAssertEqual(TimeSignature.groupingPresets(for: 4), [[2, 2]])
+    }
+
+    func testGroupingPresetsOnlyIncludeValidMeaningfulGroupings() {
+        for numerator in 1...24 {
+            for grouping in TimeSignature.groupingPresets(for: numerator) {
+                XCTAssertEqual(TimeSignature.cleanGrouping(grouping, numerator: numerator), grouping)
+            }
+        }
+    }
+
+    func testGroupingPresetsKeepUsefulGeneratedAndCuratedOptions() {
+        XCTAssertEqual(TimeSignature.groupingPresets(for: 6), [[3, 3], [2, 2, 2]])
+        XCTAssertEqual(TimeSignature.groupingPresets(for: 8), [[3, 3, 2], [3, 2, 3], [2, 3, 3]])
+        XCTAssertEqual(TimeSignature.groupingPresets(for: 12), [[3, 3, 3, 3], [2, 2, 2, 2, 2, 2], [4, 4, 4]])
     }
 
     func testSubaccentedBeatsAreInternalGroupStartsOnly() {

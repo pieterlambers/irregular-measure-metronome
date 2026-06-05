@@ -16,12 +16,42 @@ struct TimeSignature: Identifiable, Codable, Equatable, Sendable {
     }
 
     var validGrouping: [Int]? {
+        Self.cleanGrouping(grouping, numerator: numerator)
+    }
+
+    static func cleanGrouping(_ grouping: [Int]?, numerator: Int) -> [Int]? {
         guard let grouping,
               grouping.count > 1,
-              grouping.allSatisfy({ $0 > 0 }),
+              grouping.allSatisfy({ (1...4).contains($0) }),
               grouping.reduce(0, +) == numerator
         else { return nil }
         return grouping
+    }
+
+    static func groupingPresets(for numerator: Int) -> [[Int]] {
+        let curated: [Int: [[Int]]] = [
+            5: [[2, 3], [3, 2]],
+            7: [[2, 2, 3], [2, 3, 2], [3, 2, 2]],
+            8: [[3, 3, 2], [3, 2, 3], [2, 3, 3]],
+            9: [[2, 2, 2, 3], [2, 2, 3, 2], [2, 3, 2, 2], [3, 2, 2, 2], [3, 3, 3]],
+            10: [[3, 3, 2, 2], [3, 2, 3, 2], [2, 3, 3, 2], [2, 2, 3, 3]],
+            11: [[3, 3, 3, 2], [3, 3, 2, 3], [3, 2, 3, 3], [2, 3, 3, 3]],
+            12: [[3, 3, 3, 3], [2, 2, 2, 2, 2, 2], [4, 4, 4]]
+        ]
+
+        let candidates: [[Int]]
+        if let presets = curated[numerator] {
+            candidates = presets
+        } else {
+            candidates = [3, 4, 2].compactMap { groupSize in
+                guard numerator % groupSize == 0 else { return nil }
+                return Array(repeating: groupSize, count: numerator / groupSize)
+            }
+        }
+
+        return Array(candidates.filter {
+            cleanGrouping($0, numerator: numerator) == $0
+        }.prefix(4))
     }
 
     func isSubaccented(beat: Int) -> Bool {
@@ -801,12 +831,7 @@ final class MetronomeModel: ObservableObject {
     }
 
     private static func cleanGrouping(_ grouping: [Int]?, numerator: Int) -> [Int]? {
-        guard let grouping,
-              grouping.count > 1,
-              grouping.allSatisfy({ (1...4).contains($0) }),
-              grouping.reduce(0, +) == numerator
-        else { return nil }
-        return grouping
+        TimeSignature.cleanGrouping(grouping, numerator: numerator)
     }
 
     private static func cleanSongName(_ name: String, fallback: String = "Untitled Song") -> String {

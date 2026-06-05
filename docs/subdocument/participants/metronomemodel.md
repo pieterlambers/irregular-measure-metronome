@@ -19,6 +19,7 @@
 - Derives displayed measure numbers from `startMeasureNumber + sequence index`.
 - Maps displayed loop range measure numbers to sequence indices and passes the active inclusive range to `ClickEngine`.
 - Inserts measures at selected sequence indices, duplicates measures from local sequence context, updates measure signatures and groupings, and deletes measures while keeping sequence state valid and measure numbers consecutive.
+- Owns grouping normalization and preset generation so persisted grouping, displayed labels, and picker choices share the same meaningful multi-part grouping rules.
 - Saves and loads the local song library through `UserDefaults`.
 - Migrates the previous single-composition format and legacy persisted measure sequences into the current song-library format.
 - Sanitizes persisted song data, including names, BPM, measure numbers, sequences, optional grouping arrays, and read-only defaults, and falls back to a default song when needed.

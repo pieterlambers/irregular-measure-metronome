@@ -1015,7 +1015,7 @@ struct ContentView: View {
                 selectGrouping(nil, for: measure)
             }
 
-            ForEach(groupingPresets(for: measure.numerator), id: \.self) { grouping in
+            ForEach(TimeSignature.groupingPresets(for: measure.numerator), id: \.self) { grouping in
                 groupingOptionButton(
                     label: grouping.map(String.init).joined(separator: "+"),
                     isSelected: measure.validGrouping == grouping
@@ -1403,27 +1403,6 @@ struct ContentView: View {
         return border
     }
 
-    private func groupingPresets(for numerator: Int) -> [[Int]] {
-        let curated: [Int: [[Int]]] = [
-            5: [[2, 3], [3, 2]],
-            7: [[2, 2, 3], [2, 3, 2], [3, 2, 2]],
-            8: [[3, 3, 2], [3, 2, 3], [2, 3, 3]],
-            9: [[2, 2, 2, 3], [2, 2, 3, 2], [2, 3, 2, 2], [3, 2, 2, 2], [3, 3, 3]],
-            10: [[3, 3, 2, 2], [3, 2, 3, 2], [2, 3, 3, 2], [2, 2, 3, 3]],
-            11: [[3, 3, 3, 2], [3, 3, 2, 3], [3, 2, 3, 3], [2, 3, 3, 3]],
-            12: [[3, 3, 3, 3], [2, 2, 2, 2, 2, 2], [4, 4, 4]]
-        ]
-
-        if let presets = curated[numerator] {
-            return presets
-        }
-
-        var presets: [[Int]] = []
-        for groupSize in [3, 4, 2] where numerator % groupSize == 0 {
-            presets.append(Array(repeating: groupSize, count: numerator / groupSize))
-        }
-        return Array(presets.prefix(4))
-    }
 }
 
 struct FlowLayout: Layout {

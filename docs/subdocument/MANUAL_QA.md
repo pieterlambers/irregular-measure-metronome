@@ -69,6 +69,7 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 - Drag vertically on the numerator and denominator controls to step to a common signature like `5/8`, and confirm the measure updates immediately while the active value remains visible in the floating readout above the finger.
 - Drag elsewhere in the sequence list and confirm the list scrolls without accidentally changing the signature.
 - Edit a measure with grouping like `7/8 2+2+3`, if the grouping picker exposes that preset for the measure.
+- Confirm simple meters such as `2/4`, `3/4`, and `4/4` do not show single-number grouping choices that are equivalent to `None`.
 - Change the numerator after setting grouping and confirm invalid grouping is cleared instead of corrupting the sequence.
 - Insert a measure and confirm the inserted measure has the same compact signature controls as the other rows.
 - Delete a measure.
