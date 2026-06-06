@@ -543,7 +543,6 @@ struct ContentView: View {
                 }
             }
             .tint(accent)
-            .disabled(!metronome.canEditCurrentSong)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(surface, in: RoundedRectangle(cornerRadius: 12))
@@ -604,7 +603,6 @@ struct ContentView: View {
                 }
             }
             .tint(accent)
-            .disabled(!metronome.canEditCurrentSong)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(surface, in: RoundedRectangle(cornerRadius: 10))
@@ -784,7 +782,6 @@ struct ContentView: View {
                 Toggle("", isOn: $metronome.isLoopRangeEnabled)
                     .labelsHidden()
                     .tint(accent)
-                    .disabled(!metronome.canEditCurrentSong)
             }
 
             HStack(spacing: 10) {
@@ -807,7 +804,6 @@ struct ContentView: View {
                 )
             }
         }
-        .disabled(!metronome.canEditCurrentSong)
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(surface, in: RoundedRectangle(cornerRadius: 12))
@@ -836,7 +832,6 @@ struct ContentView: View {
             }
         }
         .tint(accent)
-        .disabled(!metronome.canEditCurrentSong)
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(background, in: RoundedRectangle(cornerRadius: 10))

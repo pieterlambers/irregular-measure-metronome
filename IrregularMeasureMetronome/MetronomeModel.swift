@@ -152,28 +152,16 @@ final class MetronomeModel: ObservableObject {
     @Published var isCountInFourFourEnabled = false {
         didSet {
             guard !isRevertingReadOnlyChange else { return }
-            if isCurrentSongReadOnly, !isApplyingSong {
-                isRevertingReadOnlyChange = true
-                isCountInFourFourEnabled = oldValue
-                isRevertingReadOnlyChange = false
-                return
-            }
             guard oldValue != isCountInFourFourEnabled else { return }
-            saveCurrentSong()
+            saveCurrentSong(allowReadOnlyPlaybackSettings: true)
             restartPlaybackAtLoopStartIfNeeded()
         }
     }
     @Published var isLoopRangeEnabled = false {
         didSet {
             guard !isRevertingReadOnlyChange else { return }
-            if isCurrentSongReadOnly, !isApplyingSong {
-                isRevertingReadOnlyChange = true
-                isLoopRangeEnabled = oldValue
-                isRevertingReadOnlyChange = false
-                return
-            }
             guard oldValue != isLoopRangeEnabled else { return }
-            saveCurrentSong()
+            saveCurrentSong(allowReadOnlyPlaybackSettings: true)
             restartPlaybackAtLoopStartIfNeeded()
         }
     }
@@ -389,24 +377,22 @@ final class MetronomeModel: ObservableObject {
     }
 
     func updateLoopStartMeasureNumber(_ measureNumber: Int) {
-        guard canEditCurrentSong else { return }
         guard !sequence.isEmpty else { return }
         let index = index(forMeasureNumber: measureNumber)
             .clamped(to: 0...loopEndIndex)
         guard loopStartIndex != index else { return }
         loopStartIndex = index
-        saveCurrentSong()
+        saveCurrentSong(allowReadOnlyPlaybackSettings: true)
         restartPlaybackAtLoopStartIfNeeded()
     }
 
     func updateLoopEndMeasureNumber(_ measureNumber: Int) {
-        guard canEditCurrentSong else { return }
         guard !sequence.isEmpty else { return }
         let index = index(forMeasureNumber: measureNumber)
             .clamped(to: loopStartIndex...(sequence.count - 1))
         guard loopEndIndex != index else { return }
         loopEndIndex = index
-        saveCurrentSong()
+        saveCurrentSong(allowReadOnlyPlaybackSettings: true)
         restartPlaybackAtLoopStartIfNeeded()
     }
 
@@ -676,10 +662,11 @@ final class MetronomeModel: ObservableObject {
         }
     }
 
-    private func saveCurrentSong() {
+    private func saveCurrentSong(allowReadOnlyPlaybackSettings: Bool = false) {
         guard !isApplyingSong else { return }
-        guard canEditCurrentSong else { return }
-        let song = currentSongSnapshot(isReadOnly: false)
+        let isReadOnly = isCurrentSongReadOnly
+        guard !isReadOnly || allowReadOnlyPlaybackSettings else { return }
+        let song = currentSongSnapshot(isReadOnly: isReadOnly)
 
         if let index = songs.firstIndex(where: { $0.id == currentSongID }) {
             songs[index] = song

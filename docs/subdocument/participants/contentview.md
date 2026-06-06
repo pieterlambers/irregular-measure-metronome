@@ -12,7 +12,7 @@
 - Limits compact time signature control choices to common musical numerator and denominator values before forwarding measure updates.
 - Tracks local editing state for first measure number text, inline song picker expansion, inline grouping picker expansion, and keyboard focus.
 - Lets the user edit the current song name, lock or unlock the current song, switch songs from an inline expandable song picker, create a default song, duplicate the current song, reset built-in songs to their hardcoded read-only version, and delete the current song when at least one other song exists.
-- Shows a lock indicator for read-only songs and disables editing controls for locked songs while keeping playback controls usable.
+- Shows a lock indicator for read-only songs and disables composition editing controls for locked songs while keeping playback, count-in, and loop-range controls usable.
 - Lets the user enable a four-beat 4/4 count-in before playback starts from the active loop start.
 - Lets the user type or step the first displayed measure number while keeping all rows consecutive.
 - Lets the user enable a loop range and set inclusive `from` / `to` measure numbers.

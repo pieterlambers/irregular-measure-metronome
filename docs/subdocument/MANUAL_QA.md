@@ -50,7 +50,7 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 ## Song Library
 
 - Rename the current song.
-- Lock the current song and confirm the name, tempo, count-in, first-measure, loop, grouping, insert, delete, and signature controls become disabled while Play/Stop remains usable.
+- Lock the current song and confirm the name, tempo, first-measure, grouping, insert, delete, and signature controls become disabled while Play/Stop, count-in, and loop-range controls remain usable.
 - Unlock the current song and confirm editing works again.
 - Select each built-in song and confirm it is read-only by default.
 - Create a new song.

@@ -227,18 +227,14 @@ sequenceDiagram
     rect rgb(236, 236, 255)
         Note over User,Defaults: Change Loop Range
         User->>View: Toggle loop range or adjust from/to steppers
-        alt Current song is read-only
-            View->>View: loop range controls are disabled
-        else Current song is editable
-            View->>Model: isLoopRangeEnabled / updateLoopStartMeasureNumber() / updateLoopEndMeasureNumber()
-            Model->>Model: map displayed measure numbers to clamped sequence indices
-            Model->>Defaults: save encoded song library
-            alt Playback is running
-                Model->>Model: restartPlaybackAtLoopStartIfNeeded()
-                Model->>Engine: start(bpm, sequence, loop start, active loop range, onBeat)
-            else Playback is stopped
-                Model-->>View: publish loop range and row highlighting
-            end
+        View->>Model: isLoopRangeEnabled / updateLoopStartMeasureNumber() / updateLoopEndMeasureNumber()
+        Model->>Model: map displayed measure numbers to clamped sequence indices
+        Model->>Defaults: save encoded song library
+        alt Playback is running
+            Model->>Model: restartPlaybackAtLoopStartIfNeeded()
+            Model->>Engine: start(bpm, sequence, loop start, active loop range, onBeat)
+        else Playback is stopped
+            Model-->>View: publish loop range and row highlighting
         end
     end
 ```

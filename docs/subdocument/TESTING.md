@@ -94,7 +94,7 @@ The compact time signature controls in `ContentView` reuse `updateMeasure(_:nume
 - including the built-in song exactly once;
 - preserving edits to persisted built-in songs and resetting them to their hardcoded read-only version on request;
 - treating built-in songs as read-only by default;
-- rejecting edit mutations for read-only songs until they are unlocked;
+- rejecting composition edit mutations for read-only songs until they are unlocked while allowing count-in and loop-range settings;
 - making duplicates of read-only songs editable.
 
 ## Test Seams

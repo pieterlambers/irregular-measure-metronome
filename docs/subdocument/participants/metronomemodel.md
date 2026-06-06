@@ -6,7 +6,7 @@
 - Publishes UI state including `songs`, `currentSongID`, `currentSongName`, current song read-only/editable state, `bpm`, `isPlaying`, `currentBeat`, `currentMeasureIndex`, `loopCount`, `isCountingIn`, `isCountInFourFourEnabled`, `sequence`, `startMeasureNumber`, `isLoopRangeEnabled`, loop boundary indices, `tapTempoText`, and `flashBPM`.
 - Manages the local song library, including selecting songs, creating default songs, duplicating the current song, toggling the current song's read-only flag, resetting built-in songs to their hardcoded read-only version, deleting the current song when another song exists, and renaming editable songs.
 - Treats built-in songs as read-only by default and makes duplicated songs editable copies.
-- Rejects editing mutations for read-only songs, including name, BPM, tap tempo, count-in, first measure number, loop range, sequence insertion/deletion, signature changes, and grouping changes, while leaving playback available.
+- Rejects composition-editing mutations for read-only songs, including name, BPM, tap tempo, first measure number, sequence insertion/deletion, signature changes, and grouping changes, while leaving playback, count-in, and loop-range settings available.
 - Starts playback by resetting published playback counters and asking `ClickEngine` to start buffered scheduling, with a four-beat 4/4 count-in when enabled.
 - Stops playback by incrementing `playbackGeneration`, stopping `ClickEngine`, cancelling flash timing, and resetting transient playback indicators.
 - Receives scheduled beat callbacks from `ClickEngine`.
