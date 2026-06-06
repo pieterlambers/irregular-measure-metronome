@@ -54,11 +54,13 @@ struct ContentView: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let headerTopPadding = headerTopPadding(safeAreaTop: proxy.safeAreaInsets.top)
+
             Group {
                 if canUseSplitLayout(totalWidth: proxy.size.width) {
-                    splitLayout(totalWidth: proxy.size.width)
+                    splitLayout(totalWidth: proxy.size.width, headerTopPadding: headerTopPadding)
                 } else {
-                    stackedLayout
+                    stackedLayout(headerTopPadding: headerTopPadding)
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
@@ -94,9 +96,9 @@ struct ContentView: View {
         }
     }
 
-    private var stackedLayout: some View {
+    private func stackedLayout(headerTopPadding: CGFloat) -> some View {
         VStack(spacing: 0) {
-            header
+            header(topPadding: headerTopPadding)
 
             if isCompactMeasureFocusEnabled {
                 compactMeasureFocusTransport
@@ -124,13 +126,13 @@ struct ContentView: View {
         }
     }
 
-    private func splitLayout(totalWidth: CGFloat) -> some View {
+    private func splitLayout(totalWidth: CGFloat, headerTopPadding: CGFloat) -> some View {
         let contentWidth = splitContentWidth(for: totalWidth)
         let transportWidth = splitTransportWidth(for: contentWidth)
         let sequenceWidth = max(0, contentWidth - transportWidth - splitSpacing)
 
         return VStack(spacing: 0) {
-            header
+            header(topPadding: headerTopPadding)
 
             HStack(alignment: .top, spacing: splitSpacing) {
                 VStack(spacing: 0) {
@@ -171,6 +173,16 @@ struct ContentView: View {
     private func splitTransportWidth(for contentWidth: CGFloat) -> CGFloat {
         let roomAfterMinimumSequence = contentWidth - splitSpacing - minimumMeasureCardWidth - (sequenceHorizontalPadding * 2)
         return min(preferredTransportWidth, max(minimumTransportWidth, roomAfterMinimumSequence))
+    }
+
+    private func headerTopPadding(safeAreaTop: CGFloat) -> CGFloat {
+        #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return 16 + safeAreaTop
+        }
+        #endif
+
+        return 16
     }
 
     private func sequenceColumnCount(for availableWidth: CGFloat, forcedColumnCount: Int? = nil) -> Int {
@@ -218,7 +230,7 @@ struct ContentView: View {
         }
     }
 
-    private var header: some View {
+    private func header(topPadding: CGFloat) -> some View {
         HStack {
             HStack(spacing: 8) {
                 Text("Brass Pulse")
@@ -248,7 +260,7 @@ struct ContentView: View {
                 .overlay(Capsule().stroke(accent.opacity(0.38), lineWidth: 1))
         }
         .padding(.horizontal, 24)
-        .padding(.top, 16)
+        .padding(.top, topPadding)
         .padding(.bottom, 8)
         .background(
             LinearGradient(
