@@ -8,6 +8,7 @@
 - Treats built-in songs as read-only by default and makes duplicated songs editable copies.
 - Rejects composition-editing mutations for read-only songs, including name, BPM, tap tempo, first measure number, sequence insertion/deletion, signature changes, and grouping changes, while leaving playback, count-in, and loop-range settings available.
 - Starts playback by resetting published playback counters and asking `ClickEngine` to start buffered scheduling, with a four-beat 4/4 count-in when enabled.
+- Starts playback from tapped measures, keeping loop range active for taps inside or before the range, and disabling loop range for taps after the range.
 - Stops playback by incrementing `playbackGeneration`, stopping `ClickEngine`, cancelling flash timing, and resetting transient playback indicators.
 - Receives scheduled beat callbacks from `ClickEngine`.
 - Filters stale beat callbacks with `playbackGeneration`.

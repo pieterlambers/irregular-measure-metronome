@@ -359,7 +359,7 @@ struct PlaybackCursor {
         self.loopEndIndex = max(clampedLoopStart, clampedLoopEnd)
         self.loopCount = max(1, loopCount)
         self.countInBeatsRemaining = max(0, countInBeats)
-        self.measureIndex = min(max(self.loopStartIndex, startMeasureIndex), self.loopEndIndex)
+        self.measureIndex = min(max(0, startMeasureIndex), self.loopEndIndex)
         self.beat = max(0, startBeat)
         self.countInBeat = 0
 

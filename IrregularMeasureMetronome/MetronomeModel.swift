@@ -162,7 +162,9 @@ final class MetronomeModel: ObservableObject {
             guard !isRevertingReadOnlyChange else { return }
             guard oldValue != isLoopRangeEnabled else { return }
             saveCurrentSong(allowReadOnlyPlaybackSettings: true)
-            restartPlaybackAtLoopStartIfNeeded()
+            if !isApplyingMeasurePlaybackStart {
+                restartPlaybackAtLoopStartIfNeeded()
+            }
         }
     }
     @Published private(set) var loopStartIndex = 0
@@ -207,6 +209,7 @@ final class MetronomeModel: ObservableObject {
     private var tapTimes: [Date] = []
     private var playbackGeneration = 0
     private var isApplyingSong = false
+    private var isApplyingMeasurePlaybackStart = false
     private var isRevertingReadOnlyChange = false
 
     private static let defaultSequence = [
@@ -410,17 +413,19 @@ final class MetronomeModel: ObservableObject {
 
     func start() {
         guard !sequence.isEmpty else { return }
-        isPlaying = true
-        currentBeat = -1
-        currentMeasureIndex = activeLoopStartIndex
-        loopCount = 1
-        isCountingIn = false
-        startPlayback(
-            measureIndex: activeLoopStartIndex,
-            beat: 0,
-            loopCount: 1,
-            includeCountIn: isCountInFourFourEnabled
-        )
+        startPlaybackAtMeasure(activeLoopStartIndex)
+    }
+
+    func start(atMeasureIndex index: Int) {
+        guard sequence.indices.contains(index) else { return }
+
+        isApplyingMeasurePlaybackStart = true
+        if isLoopRangeEnabled && index > loopEndIndex {
+            isLoopRangeEnabled = false
+        }
+        isApplyingMeasurePlaybackStart = false
+
+        startPlaybackAtMeasure(index)
     }
 
     func stop() {
@@ -566,6 +571,21 @@ final class MetronomeModel: ObservableObject {
                 )
             }
         }
+    }
+
+    private func startPlaybackAtMeasure(_ measureIndex: Int) {
+        guard sequence.indices.contains(measureIndex) else { return }
+        isPlaying = true
+        currentBeat = -1
+        currentMeasureIndex = measureIndex
+        loopCount = 1
+        isCountingIn = false
+        startPlayback(
+            measureIndex: measureIndex,
+            beat: 0,
+            loopCount: 1,
+            includeCountIn: isCountInFourFourEnabled
+        )
     }
 
     private func restartPlaybackFromCurrentPosition() {

@@ -8,7 +8,7 @@
 - In the stacked layout, keeps song, compact tempo, beat visualization, playback controls, and loop status visible above a dedicated scrollable sequence pane, with an optional measure-focused mode that gives most of the screen to measure rows.
 - In the split layout, keeps song, tempo, beat visualization, and transport controls in a left column while rendering the sequence editor as a dedicated scrollable one- or two-column measure grid on the right side.
 - Displays song selection, naming, and lock controls, tempo, tempo name, beat dots, playback controls, count-in control, sequence rows, active playback measure highlighting, compact drag-adjustable time signature controls, grouping pickers, start measure number, loop range controls, and loop count.
-- Converts UI events into model calls and bindings: `selectSong(_:)`, `createSong()`, `duplicateCurrentSong()`, `setCurrentSongReadOnly(_:)`, `resetCurrentSongToBuiltIn()`, `deleteCurrentSong()`, `togglePlayback()`, `isCountInFourFourEnabled`, `tapTempo()`, `duplicateMeasure(at:)`, `updateMeasure(_:numerator:denominator:)`, `updateGrouping(for:grouping:)`, `updateLoopStartMeasureNumber(_:)`, `updateLoopEndMeasureNumber(_:)`, and `deleteMeasure(_:)`.
+- Converts UI events into model calls and bindings: `selectSong(_:)`, `createSong()`, `duplicateCurrentSong()`, `setCurrentSongReadOnly(_:)`, `resetCurrentSongToBuiltIn()`, `deleteCurrentSong()`, `togglePlayback()`, `start(atMeasureIndex:)`, `isCountInFourFourEnabled`, `tapTempo()`, `duplicateMeasure(at:)`, `updateMeasure(_:numerator:denominator:)`, `updateGrouping(for:grouping:)`, `updateLoopStartMeasureNumber(_:)`, `updateLoopEndMeasureNumber(_:)`, and `deleteMeasure(_:)`.
 - Limits compact time signature control choices to common musical numerator and denominator values before forwarding measure updates.
 - Tracks local editing state for first measure number text, inline song picker expansion, inline grouping picker expansion, and keyboard focus.
 - Lets the user edit the current song name, lock or unlock the current song, switch songs from an inline expandable song picker, create a default song, duplicate the current song, reset built-in songs to their hardcoded read-only version, and delete the current song when at least one other song exists.
@@ -16,6 +16,7 @@
 - Lets the user enable a four-beat 4/4 count-in before playback starts from the active loop start.
 - Lets the user type or step the first displayed measure number while keeping all rows consecutive.
 - Lets the user enable a loop range and set inclusive `from` / `to` measure numbers.
+- Lets the user tap a measure card to start playback at that measure, with loop range rules handled by `MetronomeModel`.
 - Lets the user insert a measure at any sequence boundary by copying the local context: before the first row copies the first measure, and other boundaries copy the previous measure.
 - Lets the user adjust numerator and denominator directly in every measure row by dragging vertically on compact number controls, with an active readout that keeps the selected value visible during the drag.
 - Provides a keyboard `Done` action for text-field numeric editors such as the first displayed measure number.

@@ -939,6 +939,10 @@ struct ContentView: View {
                     .padding(.vertical, 10)
             }
         }
+        .contentShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .gesture(TapGesture().onEnded {
+            metronome.start(atMeasureIndex: index)
+        }, including: .gesture)
         .animation(.easeOut(duration: 0.08), value: isCurrentPlaybackMeasure)
     }
 

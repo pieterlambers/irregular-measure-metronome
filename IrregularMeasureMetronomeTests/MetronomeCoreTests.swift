@@ -59,7 +59,7 @@ final class PlaybackCursorTests: XCTestCase {
         TimeSignature(numerator: 4, denominator: 4)
     ]
 
-    func testNormalizesStartMeasureIntoLoopRange() {
+    func testAllowsStartMeasureBeforeLoopRange() {
         let cursor = PlaybackCursor(
             bpm: 120,
             sequence: sequence,
@@ -71,9 +71,34 @@ final class PlaybackCursorTests: XCTestCase {
             countInBeats: 0
         )
 
-        XCTAssertEqual(cursor.measureIndex, 1)
+        XCTAssertEqual(cursor.measureIndex, 0)
         XCTAssertEqual(cursor.loopStartIndex, 1)
         XCTAssertEqual(cursor.loopEndIndex, 2)
+    }
+
+    func testPreLoopStartWrapsToLoopStartAfterLoopEnd() {
+        var cursor = PlaybackCursor(
+            bpm: 120,
+            sequence: sequence,
+            startMeasureIndex: 0,
+            startBeat: 2,
+            loopStartIndex: 1,
+            loopEndIndex: 2,
+            loopCount: 1,
+            countInBeats: 0
+        )
+
+        cursor.advancePastCurrentBeat()
+        XCTAssertEqual(cursor.measureIndex, 1)
+        XCTAssertEqual(cursor.beat, 0)
+
+        cursor.measureIndex = 2
+        cursor.beat = 3
+        cursor.advancePastCurrentBeat()
+
+        XCTAssertEqual(cursor.measureIndex, 1)
+        XCTAssertEqual(cursor.beat, 0)
+        XCTAssertEqual(cursor.loopCount, 2)
     }
 
     func testNormalizesOversizedStartBeatToZero() {
@@ -450,6 +475,110 @@ final class MetronomeModelPlaybackTests: XCTestCase {
         XCTAssertEqual(model.currentMeasureIndex, 0)
         XCTAssertEqual(model.currentBeat, -1)
         XCTAssertEqual(model.loopCount, 1)
+    }
+
+    func testTapMeasureStartsPlaybackAtTappedMeasureWithoutLoopRange() {
+        let harness = ModelHarness()
+        let model = harness.model
+
+        model.start(atMeasureIndex: 2)
+
+        let start = harness.clickEngine.starts.last
+        XCTAssertTrue(model.isPlaying)
+        XCTAssertEqual(model.currentMeasureIndex, 2)
+        XCTAssertEqual(model.currentBeat, -1)
+        XCTAssertEqual(start?.startMeasureIndex, 2)
+        XCTAssertEqual(start?.loopStartIndex, 0)
+        XCTAssertEqual(start?.loopEndIndex, model.sequence.count - 1)
+    }
+
+    func testTapMeasureInsideLoopRangeStartsThereAndKeepsLoopRange() {
+        let harness = ModelHarness()
+        let model = harness.model
+        model.updateLoopStartMeasureNumber(model.startMeasureNumber + 1)
+        model.updateLoopEndMeasureNumber(model.startMeasureNumber + 2)
+        model.isLoopRangeEnabled = true
+
+        model.start(atMeasureIndex: 2)
+
+        let start = harness.clickEngine.starts.last
+        XCTAssertTrue(model.isLoopRangeEnabled)
+        XCTAssertEqual(model.currentMeasureIndex, 2)
+        XCTAssertEqual(start?.startMeasureIndex, 2)
+        XCTAssertEqual(start?.loopStartIndex, 1)
+        XCTAssertEqual(start?.loopEndIndex, 2)
+    }
+
+    func testTapMeasureBeforeLoopRangeStartsBeforeRangeThenLoopsRange() {
+        let harness = ModelHarness()
+        let model = harness.model
+        model.updateLoopStartMeasureNumber(model.startMeasureNumber + 1)
+        model.updateLoopEndMeasureNumber(model.startMeasureNumber + 2)
+        model.isLoopRangeEnabled = true
+
+        model.start(atMeasureIndex: 0)
+
+        let start = harness.clickEngine.starts.last
+        XCTAssertTrue(model.isLoopRangeEnabled)
+        XCTAssertEqual(model.currentMeasureIndex, 0)
+        XCTAssertEqual(start?.startMeasureIndex, 0)
+        XCTAssertEqual(start?.loopStartIndex, 1)
+        XCTAssertEqual(start?.loopEndIndex, 2)
+    }
+
+    func testTapMeasureAfterLoopRangeDisablesLoopRangeAndStartsThere() {
+        let harness = ModelHarness()
+        let model = harness.model
+        model.updateLoopEndMeasureNumber(model.startMeasureNumber + 1)
+        model.isLoopRangeEnabled = true
+
+        model.start(atMeasureIndex: 2)
+
+        let start = harness.clickEngine.starts.last
+        XCTAssertFalse(model.isLoopRangeEnabled)
+        XCTAssertEqual(model.currentMeasureIndex, 2)
+        XCTAssertEqual(start?.startMeasureIndex, 2)
+        XCTAssertEqual(start?.loopStartIndex, 0)
+        XCTAssertEqual(start?.loopEndIndex, model.sequence.count - 1)
+    }
+
+    func testTapMeasureCountInLeadsIntoTappedMeasure() {
+        let harness = ModelHarness()
+        let model = harness.model
+        model.isCountInFourFourEnabled = true
+
+        model.start(atMeasureIndex: 2)
+
+        let start = harness.clickEngine.starts.last
+        XCTAssertEqual(model.currentMeasureIndex, 2)
+        XCTAssertEqual(start?.startMeasureIndex, 2)
+        XCTAssertEqual(start?.countInBeats, 4)
+    }
+
+    func testTapMeasureIgnoresInvalidIndex() {
+        let harness = ModelHarness()
+        let model = harness.model
+
+        model.start(atMeasureIndex: 99)
+
+        XCTAssertFalse(model.isPlaying)
+        XCTAssertTrue(harness.clickEngine.starts.isEmpty)
+    }
+
+    func testTapMeasureWhilePlayingRestartsAtTappedMeasure() async {
+        let harness = ModelHarness()
+        let model = harness.model
+        model.start()
+        harness.clickEngine.starts.last?.onBeat(0, 0, 1, false)
+        await Task.yield()
+
+        model.start(atMeasureIndex: 2)
+
+        let restart = harness.clickEngine.starts.last
+        XCTAssertEqual(harness.clickEngine.starts.count, 2)
+        XCTAssertEqual(model.currentMeasureIndex, 2)
+        XCTAssertEqual(model.currentBeat, -1)
+        XCTAssertEqual(restart?.startMeasureIndex, 2)
     }
 }
 

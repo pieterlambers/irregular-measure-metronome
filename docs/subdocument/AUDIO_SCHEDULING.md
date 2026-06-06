@@ -10,12 +10,18 @@ This document describes the buffered audio scheduling behavior in the latest com
 
 ## Playback Start
 
-1. `MetronomeModel.start()` resets `currentBeat`, `currentMeasureIndex`, `loopCount`, and `isCountingIn`.
-2. `MetronomeModel.startPlayback(measureIndex:beat:loopCount:)` increments `playbackGeneration`.
-3. `MetronomeModel` calls `ClickEngine.start(...)` with the current BPM, sequence, starting position, loop count, optional four-beat 4/4 count-in, and an `onBeat` callback.
-4. `ClickEngine.start(...)` prepares playback by lazily creating the audio engine and player node when needed, activating the audio session, starting the engine, cancelling any previous scheduler, creating a new scheduling generation, normalizing the starting playback state, stopping the player node, filling the initial audio queue, and then starting the player node.
+1. `MetronomeModel.start()` starts at the active loop start, or measure `0` when loop range is disabled.
+2. `MetronomeModel.start(atMeasureIndex:)` starts at the tapped measure when the index is valid.
+   - With loop range disabled, the tapped measure starts playback across the whole sequence.
+   - With loop range enabled and the tapped measure inside the range, the tapped measure starts playback and the configured range remains active.
+   - With loop range enabled and the tapped measure before the range, playback starts at the tapped measure, continues through the loop range end, then wraps to the loop start.
+   - With loop range enabled and the tapped measure after the range, the model disables loop range and starts playback at the tapped measure across the whole sequence.
+3. The chosen start method resets `currentBeat`, `currentMeasureIndex`, `loopCount`, and `isCountingIn`.
+4. `MetronomeModel.startPlayback(measureIndex:beat:loopCount:)` increments `playbackGeneration`.
+5. `MetronomeModel` calls `ClickEngine.start(...)` with the current BPM, sequence, starting position, loop count, optional four-beat 4/4 count-in, and an `onBeat` callback.
+6. `ClickEngine.start(...)` prepares playback by lazily creating the audio engine and player node when needed, activating the audio session, starting the engine, cancelling any previous scheduler, creating a new scheduling generation, normalizing the starting playback state, stopping the player node, filling the initial audio queue, and then starting the player node.
 
-When the 4/4 count-in is enabled, `ClickEngine` schedules four quarter-note count-in beats at the current BPM before the first real beat. The count-in is anchored to the active loop start, so playback begins at the loop start after beat 4 of the count-in.
+When the 4/4 count-in is enabled, `ClickEngine` schedules four quarter-note count-in beats at the current BPM before the first real beat. The count-in is anchored to the selected playback start measure, so tapping a measure counts into that measure.
 
 ## Buffered Queue
 

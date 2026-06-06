@@ -137,6 +137,27 @@ sequenceDiagram
     end
 
     rect rgb(236, 236, 255)
+        Note over User,Timer: Tap Measure To Start
+        User->>View: Tap measure card
+        View->>Model: start(atMeasureIndex: tapped index)
+        alt Loop range is enabled and tapped measure is after range
+            Model->>Model: disable loop range
+            Model->>Model: use full sequence as active range
+        else Loop range is enabled and tapped measure is before range
+            Model->>Model: keep loop range and use tapped measure as one-time start
+        else Tapped measure is inside range or loop range is disabled
+            Model->>Model: keep current loop setting
+        end
+        Model->>Model: reset currentBeat, currentMeasureIndex, loopCount, isCountingIn
+        Model->>Model: increment playbackGeneration
+        Model->>Engine: start(bpm, sequence, tapped measure, active loop range, loop count, optional 4/4 count-in, onBeat)
+        Engine->>Queue: replace buffered scheduler generation
+        Queue->>Queue: schedule from tapped measure, then wrap at active loop end to active loop start
+        Engine-->>Model: onBeat(measureIndex, beat, loopCount)
+        Model-->>View: publish playback state and active loop state
+    end
+
+    rect rgb(236, 236, 255)
         Note over User,Timer: Pause
         User->>View: Tap pause button
         View->>Model: togglePlayback()
