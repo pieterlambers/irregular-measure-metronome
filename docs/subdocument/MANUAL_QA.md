@@ -51,8 +51,9 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 
 - Rename the current song.
 - Lock the current song and confirm the name, first-measure, grouping, insert, delete, and signature controls become disabled while Play/Stop, tempo, count-in, and loop-range controls remain usable.
-- Unlock the current song and confirm editing works again.
+- Unlock the current song with the lock button and confirm editing works again and the song does not automatically re-lock.
 - Select each built-in song and confirm it is read-only by default.
+- On a read-only song, long-press locked edit controls such as song name, first measure number, insert, delete, grouping, and measure numerator/denominator. Confirm each unlocks temporarily, editing works, each edit restarts the timeout, and the song locks again after 3 seconds with no edits.
 - Create a new song.
 - Duplicate a read-only song and confirm the copy is editable.
 - Expand the inline song picker and switch between songs.

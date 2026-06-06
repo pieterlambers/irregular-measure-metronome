@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var activeSignatureDrag: SignatureDrag?
     @State private var signatureDragStep = 0
     @State private var lastSignatureFeedbackTime = Date.distantPast
+    @State private var temporaryUnlockTask: Task<Void, Never>?
     #if os(iOS)
     @State private var signatureFeedbackGenerator = UISelectionFeedbackGenerator()
     #endif
@@ -51,6 +52,7 @@ struct ContentView: View {
     private let signatureNumberControlHeight: CGFloat = 62
     private let signatureDragStepDistance: CGFloat = 28
     private let minimumSignatureFeedbackInterval: TimeInterval = 1.0 / 24.0
+    private let temporaryUnlockDuration: Duration = .seconds(3)
 
     var body: some View {
         GeometryReader { proxy in
@@ -75,6 +77,16 @@ struct ContentView: View {
             if !isFirstMeasureNumberFocused {
                 firstMeasureNumberText = "\(number)"
             }
+            rescheduleTemporaryRelockIfNeeded()
+        }
+        .onChange(of: metronome.currentSongName) { _, _ in
+            rescheduleTemporaryRelockIfNeeded()
+        }
+        .onChange(of: metronome.sequence) { _, _ in
+            rescheduleTemporaryRelockIfNeeded()
+        }
+        .onChange(of: metronome.currentSongID) { _, _ in
+            cancelTemporaryUnlock()
         }
         .onChange(of: isFirstMeasureNumberFocused) { _, isFocused in
             if isFocused {
@@ -82,6 +94,9 @@ struct ContentView: View {
             } else {
                 commitFirstMeasureNumberText()
             }
+        }
+        .onDisappear {
+            cancelTemporaryUnlock()
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
@@ -299,12 +314,14 @@ struct ContentView: View {
                     .frame(height: 38)
                     .background(background, in: RoundedRectangle(cornerRadius: 10))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(border, lineWidth: 1))
+                    .overlay(temporaryUnlockOverlay())
                     .accessibilityLabel("Song name")
 
                 songIconButton(
                     metronome.isCurrentSongReadOnly ? "lock.fill" : "lock.open",
                     label: metronome.isCurrentSongReadOnly ? "Unlock song" : "Lock song"
                 ) {
+                    cancelTemporaryUnlock()
                     metronome.setCurrentSongReadOnly(!metronome.isCurrentSongReadOnly)
                     isFirstMeasureNumberFocused = false
                 }
@@ -733,6 +750,7 @@ struct ContentView: View {
         .padding(.vertical, 10)
         .background(surface, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1))
+        .overlay(temporaryUnlockOverlay())
         .padding(.horizontal, 24)
         .padding(.bottom, 8)
     }
@@ -921,6 +939,7 @@ struct ContentView: View {
                 .disabled(!metronome.canEditCurrentSong || metronome.sequence.count <= 1)
                 .opacity(metronome.canEditCurrentSong && metronome.sequence.count > 1 ? 1 : 0.35)
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(border, lineWidth: 1))
+                .overlay(temporaryUnlockOverlay())
             }
 
             if expandedGroupingMeasureID == measure.id {
@@ -1024,6 +1043,7 @@ struct ContentView: View {
         .buttonStyle(.plain)
         .disabled(!metronome.canEditCurrentSong)
         .opacity(metronome.canEditCurrentSong ? 1 : 0.45)
+        .overlay(temporaryUnlockOverlay())
         .accessibilityLabel("Grouping \(measure.groupingLabel)")
     }
 
@@ -1070,6 +1090,7 @@ struct ContentView: View {
         }
         .buttonStyle(.plain)
         .disabled(!metronome.canEditCurrentSong)
+        .overlay(temporaryUnlockOverlay())
         .accessibilityLabel(label)
     }
 
@@ -1100,6 +1121,7 @@ struct ContentView: View {
             .disabled(!metronome.canEditCurrentSong)
             .background(background, in: Circle())
             .overlay(Circle().stroke(border, lineWidth: 1))
+            .overlay(temporaryUnlockOverlay())
             .opacity(metronome.canEditCurrentSong ? 1 : 0.35)
             .accessibilityLabel("Insert measure here")
 
@@ -1217,7 +1239,12 @@ struct ContentView: View {
         .animation(.easeOut(duration: 0.10), value: isActive)
         .contentShape(Rectangle())
         .gesture(signatureDragGesture(dragID: dragID, stepAction: stepAction))
-        .allowsHitTesting(metronome.canEditCurrentSong)
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.6)
+                .onEnded { _ in
+                    unlockCurrentSongTemporarily()
+                }
+        )
         .opacity(metronome.canEditCurrentSong ? 1 : 0.55)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(label) \(value)")
@@ -1241,6 +1268,7 @@ struct ContentView: View {
     ) -> some Gesture {
         DragGesture(minimumDistance: 6, coordinateSpace: .local)
             .onChanged { value in
+                guard metronome.canEditCurrentSong else { return }
                 if activeSignatureDrag != dragID {
                     activeSignatureDrag = dragID
                     signatureDragStep = 0
@@ -1261,6 +1289,56 @@ struct ContentView: View {
                 signatureDragStep = 0
                 prepareSelectionFeedback()
             }
+    }
+
+    @ViewBuilder
+    private func temporaryUnlockOverlay() -> some View {
+        if metronome.isCurrentSongReadOnly {
+            Rectangle()
+                .fill(Color.white.opacity(0.001))
+                .contentShape(Rectangle())
+                .onLongPressGesture(minimumDuration: 0.6) {
+                    unlockCurrentSongTemporarily()
+                }
+        }
+    }
+
+    private func unlockCurrentSongTemporarily() {
+        guard metronome.isCurrentSongReadOnly || temporaryUnlockTask != nil else {
+            return
+        }
+
+        let songID = metronome.currentSongID
+        if metronome.isCurrentSongReadOnly {
+            metronome.setCurrentSongReadOnly(false)
+        }
+        scheduleTemporaryRelock(for: songID)
+    }
+
+    private func rescheduleTemporaryRelockIfNeeded() {
+        guard temporaryUnlockTask != nil else { return }
+        scheduleTemporaryRelock(for: metronome.currentSongID)
+    }
+
+    private func scheduleTemporaryRelock(for songID: UUID) {
+        cancelTemporaryUnlock()
+        let temporaryUnlockDuration = temporaryUnlockDuration
+        temporaryUnlockTask = Task {
+            try? await Task.sleep(for: temporaryUnlockDuration)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                guard metronome.currentSongID == songID,
+                      metronome.canEditCurrentSong
+                else { return }
+                metronome.setCurrentSongReadOnly(true)
+                temporaryUnlockTask = nil
+            }
+        }
+    }
+
+    private func cancelTemporaryUnlock() {
+        temporaryUnlockTask?.cancel()
+        temporaryUnlockTask = nil
     }
 
     private func stepNumerator(for measure: TimeSignature, direction: Int) {

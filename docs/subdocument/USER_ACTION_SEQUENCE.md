@@ -68,6 +68,7 @@ sequenceDiagram
             Model->>Defaults: save encoded song library
         else Toggle read-only
             User->>View: Tap lock or unlock button
+            View->>View: cancel any temporary unlock timer
             View->>Model: setCurrentSongReadOnly(newValue)
             Model->>Model: save current song snapshot with read-only flag
             Model->>Defaults: save encoded song library
@@ -265,7 +266,23 @@ sequenceDiagram
         Note over User,Defaults: Duplicate Local Measure and Edit Inline
         User->>View: Tap insert button at a sequence boundary
         alt Current song is read-only
-            View->>View: insert and signature controls are disabled
+            View->>View: insert and signature drag-editing controls are disabled
+            User->>View: Long-press a locked composition-edit control
+            View->>Model: setCurrentSongReadOnly(false)
+            Model->>Model: save current song snapshot with read-only flag cleared
+            Model->>Defaults: save encoded song library
+            View->>Timer: start 3-second temporary unlock timer
+            Model-->>View: publish unlocked editability state
+            User->>View: Drag vertically on numerator or denominator
+            View->>Model: updateMeasure(measure, numerator, denominator)
+            Model->>Model: update TimeSignature and clean invalid grouping
+            Model->>Defaults: save encoded song library
+            View->>Timer: restart 3-second temporary unlock timer after the edit
+            Timer-->>View: temporary unlock timer fires after no edits
+            View->>Model: setCurrentSongReadOnly(true)
+            Model->>Model: save current song snapshot with read-only flag
+            Model->>Defaults: save encoded song library
+            Model-->>View: publish locked editability state
         else Current song is editable
             View->>Model: duplicateMeasure(at)
             Model->>Model: copy first measure when inserting before row 1

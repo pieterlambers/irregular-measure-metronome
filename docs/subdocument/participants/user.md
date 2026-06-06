@@ -11,9 +11,10 @@
 - Types or steps the first displayed measure number.
 - Inserts measures at sequence boundaries by copying the nearby measure.
 - Edits a measure by stepping compact numerator and denominator controls in the inserted or existing measure row.
+- Temporarily unlocks a read-only song by long-pressing a locked composition-edit control, then edits before 3 idle seconds pass.
 - Chooses optional grouping presets for a measure, such as `2+2+3` in `7/8`.
 - Deletes existing measures when more than one measure remains.
-- Can play read-only songs and adjust tempo, count-in, or loop settings, but cannot edit their measure numbering or sequence until unlocking them or duplicating an editable copy.
+- Can play read-only songs and adjust tempo, count-in, or loop settings, but cannot edit their measure numbering or sequence until unlocking them, temporarily unlocking from a locked edit control, or duplicating an editable copy.
 
 ## Future Change Notes
 

@@ -10,9 +10,10 @@
 - Displays song selection, naming, and lock controls, tempo, tempo name, beat dots, playback controls, count-in control, sequence rows, active playback measure highlighting, compact drag-adjustable time signature controls, grouping pickers, start measure number, loop range controls, and loop count.
 - Converts UI events into model calls and bindings: `selectSong(_:)`, `createSong()`, `duplicateCurrentSong()`, `setCurrentSongReadOnly(_:)`, `resetCurrentSongToBuiltIn()`, `deleteCurrentSong()`, `togglePlayback()`, `start(atMeasureIndex:)`, `isCountInFourFourEnabled`, `tapTempo()`, `duplicateMeasure(at:)`, `updateMeasure(_:numerator:denominator:)`, `updateGrouping(for:grouping:)`, `updateLoopStartMeasureNumber(_:)`, `updateLoopEndMeasureNumber(_:)`, and `deleteMeasure(_:)`.
 - Limits compact time signature control choices to common musical numerator and denominator values before forwarding measure updates.
-- Tracks local editing state for first measure number text, inline song picker expansion, inline grouping picker expansion, and keyboard focus.
+- Tracks local editing state for first measure number text, inline song picker expansion, inline grouping picker expansion, keyboard focus, and temporary unlock timing.
 - Lets the user edit the current song name, lock or unlock the current song, switch songs from an inline expandable song picker, create a default song, duplicate the current song, reset built-in songs to their hardcoded read-only version, and delete the current song when at least one other song exists.
 - Shows a lock indicator for read-only songs and disables composition editing controls for locked songs while keeping playback, count-in, and loop-range controls usable.
+- Lets the user long-press locked composition-edit controls, including song name, first measure number, insert/delete, grouping, and measure numerator/denominator controls, to temporarily unlock a read-only song for editing. It automatically locks again after 3 seconds without composition edits. The explicit lock button remains manual and does not auto-lock after unlocking.
 - Lets the user enable a four-beat 4/4 count-in before playback starts from the active loop start.
 - Lets the user type or step the first displayed measure number while keeping all rows consecutive.
 - Lets the user enable a loop range and set inclusive `from` / `to` measure numbers.
