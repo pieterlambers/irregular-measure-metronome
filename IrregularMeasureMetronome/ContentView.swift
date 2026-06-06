@@ -29,11 +29,13 @@ struct ContentView: View {
         var component: SignatureComponent
     }
 
-    private let accent = Color(red: 0.91, green: 1.0, blue: 0.28)
-    private let background = Color(red: 0.05, green: 0.05, blue: 0.06)
-    private let surface = Color(red: 0.13, green: 0.13, blue: 0.15)
-    private let border = Color(red: 0.20, green: 0.20, blue: 0.23)
-    private let muted = Color(red: 0.45, green: 0.45, blue: 0.49)
+    private let accent = Color(red: 1.0, green: 0.875, blue: 0.471)
+    private let brandRed = Color(red: 0.627, green: 0.063, blue: 0.027)
+    private let background = Color(red: 0.118, green: 0.0, blue: 0.0)
+    private let surface = Color(red: 0.129, green: 0.137, blue: 0.149)
+    private let border = Color(red: 0.424, green: 0.008, blue: 0.008)
+    private let muted = Color(red: 0.781, green: 0.742, blue: 0.660)
+    private let cream = Color(red: 0.969, green: 0.957, blue: 0.918)
     private let commonNumerators = Array(1...12)
     private let commonDenominators = [2, 4, 8, 16]
     private let maxSplitContentWidth: CGFloat = 1180
@@ -218,25 +220,43 @@ struct ContentView: View {
 
     private var header: some View {
         HStack {
-            Text("Brass Pulse")
-                .font(.system(size: 11, weight: .medium, design: .monospaced))
-                .tracking(1.6)
-                .foregroundStyle(muted)
-                .textCase(.uppercase)
+            HStack(spacing: 8) {
+                Text("Brass Pulse")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .tracking(1.6)
+                    .foregroundStyle(cream)
+                    .textCase(.uppercase)
+
+                Text("KFK")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .tracking(1.1)
+                    .foregroundStyle(background)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(accent, in: Capsule())
+                    .accessibilityLabel("Dedicated to KFK")
+            }
 
             Spacer()
 
             Text("\(metronome.bpm) bpm")
                 .font(.system(size: 13, weight: .medium, design: .monospaced))
-                .foregroundStyle(accent)
+                .foregroundStyle(cream)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 5)
-                .background(accent.opacity(0.10), in: Capsule())
-                .overlay(Capsule().stroke(accent.opacity(0.30), lineWidth: 1))
+                .background(brandRed, in: Capsule())
+                .overlay(Capsule().stroke(accent.opacity(0.38), lineWidth: 1))
         }
         .padding(.horizontal, 24)
         .padding(.top, 16)
         .padding(.bottom, 8)
+        .background(
+            LinearGradient(
+                colors: [brandRed.opacity(0.52), background.opacity(0.0)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
     }
 
     private var songControls: some View {

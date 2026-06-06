@@ -13,10 +13,10 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 
 - Delete any previous install before the fresh install.
 - Install a fresh build.
-- Launch Brass Pulse.
+- Launch Brass Pulse KFK.
 - Confirm the app icon appears correctly on the Home Screen.
 - Confirm the app icon is recognizable at Home Screen size and does not show clipped important details.
-- Confirm the Home Screen label reads `Brass Pulse`.
+- Confirm the Home Screen label reads `Brass Pulse KFK`.
 - Confirm the app opens without permission prompts.
 - Confirm the default song loads with visible measures and a BPM value.
 
@@ -35,7 +35,7 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 - Start playback, lock the device, and listen for at least 30 seconds.
 - Unlock the device and confirm the UI is responsive.
 - Start playback, switch to another app, and confirm clicks continue.
-- Return to Brass Pulse and confirm Play/Stop still works.
+- Return to Brass Pulse KFK and confirm Play/Stop still works.
 - Stop playback, lock the device, and confirm no unnecessary clicks continue.
 
 ## Audio Interruptions And Routes
@@ -128,7 +128,7 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 - Confirm there are no placeholder screens or debug-only labels.
 - Confirm there are no broken links in any in-app UI.
 - Confirm the App Store bundle ID is `nl.pieterlambers.irregularmetronome`.
-- Confirm the App Store app name is `Brass Pulse`, or intentionally different from the Home Screen label.
+- Confirm the App Store app name is `Brass Pulse KFK`, or intentionally different from the Home Screen label.
 - Confirm the privacy behavior matches the App Store privacy label: no tracking and no collected data.
 - Confirm background audio is used only for audible metronome playback.
 - Confirm App Review notes explain how to start playback, edit measures, test loops, and use built-in songs.
