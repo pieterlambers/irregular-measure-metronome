@@ -399,22 +399,21 @@ final class MetronomeModelPlaybackTests: XCTestCase {
         XCTAssertEqual(harness.clickEngine.stopCount, initialStopCount + 1)
     }
 
-    func testBPMChangeWhilePlayingRestartsFromCurrentPosition() async {
+    func testBPMChangeWhilePlayingStopsPlayback() async {
         let harness = ModelHarness()
         let model = harness.model
+        let initialStopCount = harness.clickEngine.stopCount
         model.start()
         harness.clickEngine.starts.last?.onBeat(1, 2, 3, false)
         await Task.yield()
 
         model.bpm = 160
 
-        let restart = harness.clickEngine.starts.last
-        XCTAssertEqual(harness.clickEngine.starts.count, 2)
-        XCTAssertEqual(restart?.bpm, 160)
-        XCTAssertEqual(restart?.startMeasureIndex, 1)
-        XCTAssertEqual(restart?.startBeat, 2)
-        XCTAssertEqual(restart?.loopCount, 3)
-        XCTAssertEqual(restart?.countInBeats, 0)
+        XCTAssertEqual(model.bpm, 160)
+        XCTAssertFalse(model.isPlaying)
+        XCTAssertEqual(model.currentBeat, -1)
+        XCTAssertEqual(harness.clickEngine.starts.count, 1)
+        XCTAssertEqual(harness.clickEngine.stopCount, initialStopCount + 1)
     }
 
     func testBeatCallbacksUpdateVisiblePlaybackState() async {
@@ -603,6 +602,26 @@ final class TapTempoTests: XCTestCase {
         XCTAssertEqual(model.tapTempoText, "80")
     }
 
+    func testTapTempoWorksForReadOnlySongsAndStopsPlayback() {
+        var fakeNow = Date(timeIntervalSince1970: 1_000)
+        let harness = ModelHarness(now: { fakeNow })
+        let model = harness.model
+        let initialStopCount = harness.clickEngine.stopCount
+        model.setCurrentSongReadOnly(true)
+        model.start()
+
+        model.tapTempo()
+        fakeNow = fakeNow.addingTimeInterval(0.4)
+        model.tapTempo()
+
+        XCTAssertEqual(model.bpm, 150)
+        XCTAssertEqual(model.tapTempoText, "150")
+        XCTAssertFalse(model.isPlaying)
+        XCTAssertEqual(harness.clickEngine.stopCount, initialStopCount + 1)
+        XCTAssertEqual(model.currentSong.bpm, 150)
+        XCTAssertTrue(model.isCurrentSongReadOnly)
+    }
+
     func testTapTempoClampsBPM() {
         var fakeNow = Date(timeIntervalSince1970: 1_000)
         let harness = ModelHarness(now: { fakeNow })
@@ -778,7 +797,6 @@ final class SongLibraryPersistenceTests: XCTestCase {
         let harness = ModelHarness()
         let model = harness.model
         let originalName = model.currentSongName
-        let originalBPM = model.bpm
         let originalStartMeasure = model.startMeasureNumber
         let originalSequence = model.sequence
 
@@ -799,7 +817,7 @@ final class SongLibraryPersistenceTests: XCTestCase {
         model.tapTempo()
 
         XCTAssertEqual(model.currentSongName, originalName)
-        XCTAssertEqual(model.bpm, originalBPM)
+        XCTAssertEqual(model.bpm, 160)
         XCTAssertEqual(model.startMeasureNumber, originalStartMeasure)
         XCTAssertTrue(model.isCountInFourFourEnabled)
         XCTAssertTrue(model.isLoopRangeEnabled)
@@ -808,6 +826,7 @@ final class SongLibraryPersistenceTests: XCTestCase {
         XCTAssertEqual(model.sequence, originalSequence)
         XCTAssertEqual(model.tapTempoText, "TAP")
         XCTAssertTrue(model.isCurrentSongReadOnly)
+        XCTAssertEqual(model.currentSong.bpm, 160)
         XCTAssertEqual(model.currentSong.loopRange, PersistedLoopRange(isEnabled: true, startIndex: 1, endIndex: 1))
         XCTAssertEqual(model.currentSong.countInFourFourEnabled, true)
 

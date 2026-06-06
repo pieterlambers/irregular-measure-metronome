@@ -184,50 +184,41 @@ sequenceDiagram
     rect rgb(236, 236, 255)
         Note over User,Timer: Change BPM
         User->>View: Drag BPM slider
-        alt Current song is read-only
-            View->>View: BPM slider is disabled
-        else Current song is editable
-            View->>Model: bpm = rounded slider value
-            Model->>Model: clamp bpm to 20...300
-            Model->>Defaults: save encoded song library
-            alt Playback is running
-                Model->>Model: restartPlaybackFromCurrentPosition()
-                Model->>Model: increment playbackGeneration
-                Model->>Engine: start(bpm, sequence, current position, active loop range, onBeat)
-                Engine->>Queue: replace buffered scheduler generation
-                Queue->>Queue: schedule future beats with updated interval
-            else Playback is stopped
-                Model-->>View: publish bpm and tempoName
-            end
+        View->>Model: bpm = rounded slider value
+        Model->>Model: clamp bpm to 20...300
+        alt Playback is running
+            Model->>Model: stop()
+            Model->>Model: increment playbackGeneration
+            Model->>Engine: stop()
+            Model-->>View: publish stopped playback state
+        else Playback is stopped
+            Model-->>View: publish bpm and tempoName
         end
+        Model->>Defaults: save encoded song library
     end
 
     rect rgb(236, 236, 255)
         Note over User,Timer: Tap Tempo
         User->>View: Tap TEMPO button
-        alt Current song is read-only
-            View->>View: TEMPO button is disabled
-        else Current song is editable
-            View->>Model: tapTempo()
-            Model->>Model: append tap timestamp
-            Model->>Timer: cancel previous tap reset
-            Model->>Timer: sleep(2500 ms)
-            alt Fewer than 2 taps
-                Model-->>View: keep tapTempoText as TAP
-            else 2 or more taps
-                Model->>Model: average tap intervals
-                Model->>Model: bpm = clamped calculated tempo
-                Model->>Defaults: save encoded song library
-                Model->>Model: tapTempoText = bpm
-                alt Playback is running
-                    Model->>Model: restartPlaybackFromCurrentPosition()
-                    Model->>Engine: restart buffered scheduling at tapped tempo
-                end
-                Model-->>View: publish bpm and tapTempoText
+        View->>Model: tapTempo()
+        Model->>Model: append tap timestamp
+        Model->>Timer: cancel previous tap reset
+        Model->>Timer: sleep(2500 ms)
+        alt Fewer than 2 taps
+            Model-->>View: keep tapTempoText as TAP
+        else 2 or more taps
+            Model->>Model: average tap intervals
+            Model->>Model: bpm = clamped calculated tempo
+            alt Playback is running
+                Model->>Model: stop()
+                Model->>Engine: stop()
             end
-            Timer-->>Model: clear tapTimes and reset tapTempoText
-            Model-->>View: publish reset tapTempoText
+            Model->>Defaults: save encoded song library
+            Model->>Model: tapTempoText = bpm
+            Model-->>View: publish bpm and tapTempoText
         end
+        Timer-->>Model: clear tapTimes and reset tapTempoText
+        Model-->>View: publish reset tapTempoText
     end
 
     rect rgb(236, 236, 255)

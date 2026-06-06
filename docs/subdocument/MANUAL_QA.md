@@ -24,7 +24,7 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 
 - Tap Play and confirm clicks are audible.
 - Tap Stop and confirm clicks stop immediately.
-- Change BPM with the slider while playing and confirm playback continues at the new tempo.
+- Change BPM with the slider while playing and confirm playback stops; press Play again and confirm it starts at the new tempo.
 - Use tap tempo and confirm the displayed BPM changes after repeated taps.
 - Enable count-in and confirm four count-in beats happen before the selected sequence.
 - Confirm the first beat of each measure has a stronger accent.
@@ -50,7 +50,7 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 ## Song Library
 
 - Rename the current song.
-- Lock the current song and confirm the name, tempo, first-measure, grouping, insert, delete, and signature controls become disabled while Play/Stop, count-in, and loop-range controls remain usable.
+- Lock the current song and confirm the name, first-measure, grouping, insert, delete, and signature controls become disabled while Play/Stop, tempo, count-in, and loop-range controls remain usable.
 - Unlock the current song and confirm editing works again.
 - Select each built-in song and confirm it is read-only by default.
 - Create a new song.

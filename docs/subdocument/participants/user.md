@@ -13,7 +13,7 @@
 - Edits a measure by stepping compact numerator and denominator controls in the inserted or existing measure row.
 - Chooses optional grouping presets for a measure, such as `2+2+3` in `7/8`.
 - Deletes existing measures when more than one measure remains.
-- Can play read-only songs and adjust count-in or loop settings, but cannot edit their tempo, measure numbering, or sequence until unlocking them or duplicating an editable copy.
+- Can play read-only songs and adjust tempo, count-in, or loop settings, but cannot edit their measure numbering or sequence until unlocking them or duplicating an editable copy.
 
 ## Future Change Notes
 

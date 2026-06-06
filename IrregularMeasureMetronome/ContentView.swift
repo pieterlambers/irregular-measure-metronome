@@ -417,8 +417,6 @@ struct ContentView: View {
                 set: { metronome.bpm = Int($0.rounded()) }
             ), in: 20...300, step: 1)
             .tint(accent)
-            .disabled(!metronome.canEditCurrentSong)
-            .opacity(metronome.canEditCurrentSong ? 1 : 0.45)
 
             HStack {
                 Text("20")
@@ -461,8 +459,6 @@ struct ContentView: View {
                 set: { metronome.bpm = Int($0.rounded()) }
             ), in: 20...300, step: 1)
             .tint(accent)
-            .disabled(!metronome.canEditCurrentSong)
-            .opacity(metronome.canEditCurrentSong ? 1 : 0.45)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 10)
@@ -523,10 +519,8 @@ struct ContentView: View {
                     .frame(width: 96, height: 60)
                 }
                 .buttonStyle(.plain)
-                .disabled(!metronome.canEditCurrentSong)
                 .background(surface, in: RoundedRectangle(cornerRadius: 16))
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(border, lineWidth: 1))
-                .opacity(metronome.canEditCurrentSong ? 1 : 0.45)
             }
 
             Toggle(isOn: $metronome.isCountInFourFourEnabled) {
@@ -583,10 +577,8 @@ struct ContentView: View {
                     .frame(width: 88, height: 48)
                 }
                 .buttonStyle(.plain)
-                .disabled(!metronome.canEditCurrentSong)
                 .background(surface, in: RoundedRectangle(cornerRadius: 12))
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1))
-                .opacity(metronome.canEditCurrentSong ? 1 : 0.45)
             }
 
             Toggle(isOn: $metronome.isCountInFourFourEnabled) {
@@ -643,10 +635,8 @@ struct ContentView: View {
                     .frame(width: 58, height: 36)
             }
             .buttonStyle(.plain)
-            .disabled(!metronome.canEditCurrentSong)
             .background(surface, in: RoundedRectangle(cornerRadius: 9))
             .overlay(RoundedRectangle(cornerRadius: 9).stroke(border, lineWidth: 1))
-            .opacity(metronome.canEditCurrentSong ? 1 : 0.45)
 
             Text("L\(metronome.loopCount)")
                 .font(.system(size: 12, weight: .medium, design: .monospaced))

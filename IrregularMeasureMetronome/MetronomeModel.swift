@@ -126,21 +126,16 @@ final class MetronomeModel: ObservableObject {
     @Published var bpm: Int = 120 {
         didSet {
             guard !isRevertingReadOnlyChange else { return }
-            if isCurrentSongReadOnly, !isApplyingSong {
-                isRevertingReadOnlyChange = true
-                bpm = oldValue
-                isRevertingReadOnlyChange = false
-                return
-            }
             let clamped = min(300, max(20, bpm))
             if bpm != clamped {
                 bpm = clamped
                 return
             }
+            guard oldValue != bpm else { return }
             if isPlaying {
-                restartPlaybackFromCurrentPosition()
+                stop()
             }
-            saveCurrentSong()
+            saveCurrentSong(allowReadOnlyPlaybackSettings: true)
         }
     }
 
@@ -439,7 +434,6 @@ final class MetronomeModel: ObservableObject {
     }
 
     func tapTempo() {
-        guard canEditCurrentSong else { return }
         let tapTime = now()
         tapTimes.append(tapTime)
         if tapTimes.count > 8 {
@@ -586,27 +580,6 @@ final class MetronomeModel: ObservableObject {
             loopCount: 1,
             includeCountIn: isCountInFourFourEnabled
         )
-    }
-
-    private func restartPlaybackFromCurrentPosition() {
-        if isCountingIn {
-            currentBeat = -1
-            currentMeasureIndex = activeLoopStartIndex
-            loopCount = 1
-            isCountingIn = false
-            startPlayback(
-                measureIndex: activeLoopStartIndex,
-                beat: 0,
-                loopCount: 1,
-                includeCountIn: isCountInFourFourEnabled
-            )
-            return
-        }
-
-        let beat = max(0, currentBeat)
-        let measureIndex = currentMeasureIndex.clamped(to: activeLoopStartIndex...activeLoopEndIndex)
-        isCountingIn = false
-        startPlayback(measureIndex: measureIndex, beat: beat, loopCount: loopCount)
     }
 
     private var activeLoopStartIndex: Int {

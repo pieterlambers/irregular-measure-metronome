@@ -65,7 +65,7 @@ The compact time signature controls in `ContentView` reuse `updateMeasure(_:nume
 
 - `start()` resets playback state and calls the click engine with expected BPM, sequence, beat, loop range, loop count, and count-in settings;
 - `stop()` clears transient playback state and stops the click engine;
-- BPM changes while playing restart playback from the current position;
+- BPM changes while playing stop playback instead of rebuffering mid-stream;
 - count-in enabled playback starts with four count-in beats;
 - fake beat callbacks update visible playback state and flash state;
 - the played-measure highlight predicate is false before the first sequence beat, false during count-in, true for the audible current sequence measure, and false after stop;
@@ -94,7 +94,7 @@ The compact time signature controls in `ContentView` reuse `updateMeasure(_:nume
 - including the built-in song exactly once;
 - preserving edits to persisted built-in songs and resetting them to their hardcoded read-only version on request;
 - treating built-in songs as read-only by default;
-- rejecting composition edit mutations for read-only songs until they are unlocked while allowing count-in and loop-range settings;
+- rejecting composition edit mutations for read-only songs until they are unlocked while allowing tempo, count-in, and loop-range settings;
 - making duplicates of read-only songs editable.
 
 ## Test Seams
