@@ -1238,7 +1238,10 @@ struct ContentView: View {
         .frame(width: signatureNumberControlWidth, height: signatureNumberControlHeight)
         .animation(.easeOut(duration: 0.10), value: isActive)
         .contentShape(Rectangle())
-        .gesture(signatureDragGesture(dragID: dragID, stepAction: stepAction))
+        .gesture(
+            signatureDragGesture(dragID: dragID, stepAction: stepAction),
+            including: metronome.canEditCurrentSong ? .all : .none
+        )
         .simultaneousGesture(
             LongPressGesture(minimumDuration: 0.6)
                 .onEnded { _ in
