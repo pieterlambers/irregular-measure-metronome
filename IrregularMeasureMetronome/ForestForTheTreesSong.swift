@@ -39,8 +39,8 @@ enum ForestForTheTreesSong {
                 signature(7, 8, grouping: [3, 2, 2]), // m. 130
                 signature(5, 8, grouping: [3, 2]), // m. 131
                 signature(3, 8), // m. 132
-                signature(5, 4), // m. 133
-                signature(5, 4), // m. 134
+                signature(3, 4), // m. 133
+                signature(3, 4), // m. 134
                 signature(4, 4), // m. 135
                 signature(4, 4) // m. 136
             ],
