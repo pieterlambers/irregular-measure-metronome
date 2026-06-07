@@ -29,7 +29,7 @@ sequenceDiagram
         Model->>Defaults: save current song into encoded song library
         Model->>Model: stop()
         Model->>Engine: stop buffered scheduling
-        Model->>Model: apply selected song name, BPM, sequence, start measure, loop range, and read-only state
+        Model->>Model: apply selected song name, BPM, sequence, start measure, and loop range
         Model->>Defaults: save encoded song library with currentSongID
         Model-->>View: publish selected song state
         View->>View: collapse inline song picker
@@ -38,7 +38,7 @@ sequenceDiagram
     rect rgb(236, 236, 255)
         Note over User,Defaults: Rename Song
         User->>View: Edit song name field
-        alt Current song is read-only
+        alt Current song editing is locked
             View->>View: song name field is disabled
         else Current song is editable
             View->>Model: currentSongName = typed value
@@ -49,7 +49,7 @@ sequenceDiagram
     end
 
     rect rgb(236, 236, 255)
-        Note over User,Defaults: Create, Duplicate, Lock, Reset, or Delete Song
+        Note over User,Defaults: Create, Duplicate, Reset, or Delete Song
         alt Create song
             User->>View: Tap new song button
             View->>Model: createSong()
@@ -63,23 +63,16 @@ sequenceDiagram
             View->>Model: duplicateCurrentSong()
             Model->>Defaults: save current song into encoded song library
             Model->>Model: stop()
-            Model->>Model: copy current song with new ID, copied measure IDs, Copy name, and read-only flag cleared
+            Model->>Model: copy current song with new ID, copied measure IDs, and Copy name
             Model->>Model: apply duplicated song
             Model->>Defaults: save encoded song library
-        else Toggle read-only
-            User->>View: Tap lock or unlock button
-            View->>View: cancel any temporary unlock timer
-            View->>Model: setCurrentSongReadOnly(newValue)
-            Model->>Model: save current song snapshot with read-only flag
-            Model->>Defaults: save encoded song library
-            Model-->>View: publish lock icon and editability state
         else Reset built-in song
             User->>View: Tap reset song button
             alt Current song is not built-in
                 View->>View: reset button is disabled
             else Current song is built-in
                 View->>Model: resetCurrentSongToBuiltIn()
-                Model->>Model: replace current song with hardcoded read-only built-in version
+                Model->>Model: replace current song with hardcoded built-in version
                 Model->>Model: apply reset song
                 Model->>Defaults: save encoded song library
             end
@@ -225,7 +218,7 @@ sequenceDiagram
     rect rgb(236, 236, 255)
         Note over User,Defaults: Change First Measure Number
         User->>View: Enter first measure number or adjust stepper
-        alt Current song is read-only
+        alt Current song editing is locked
             View->>View: first-measure controls are disabled
         else Current song is editable
             View->>View: allow empty in-progress text and strip non-digits
@@ -265,12 +258,10 @@ sequenceDiagram
     rect rgb(236, 236, 255)
         Note over User,Defaults: Duplicate Local Measure and Edit Inline
         User->>View: Tap insert button at a sequence boundary
-        alt Current song is read-only
+        alt Current song editing is locked
             View->>View: insert and signature drag-editing controls are disabled
             User->>View: Long-press a locked composition-edit control and keep holding
-            View->>Model: setCurrentSongReadOnly(false)
-            Model->>Model: save current song snapshot with read-only flag cleared
-            Model->>Defaults: save encoded song library
+            View->>Model: unlockCurrentSongEditingTemporarily()
             View->>Timer: start 3-second temporary unlock timer
             Model-->>View: publish unlocked editability state
             User->>View: Continue the same hold into the underlying edit action
@@ -281,9 +272,7 @@ sequenceDiagram
             Model->>Defaults: save encoded song library
             View->>Timer: restart 3-second temporary unlock timer after the edit
             Timer-->>View: temporary unlock timer fires after no edits
-            View->>Model: setCurrentSongReadOnly(true)
-            Model->>Model: save current song snapshot with read-only flag
-            Model->>Defaults: save encoded song library
+            View->>Model: clearTemporaryEditingUnlock()
             Model-->>View: publish locked editability state
         else Current song is editable
             View->>Model: duplicateMeasure(at)
@@ -315,7 +304,7 @@ sequenceDiagram
     rect rgb(236, 236, 255)
         Note over User,Defaults: Change Measure Grouping
         User->>View: Expand inline grouping picker on a sequence row
-        alt Current song is read-only
+        alt Current song editing is locked
             View->>View: grouping picker is disabled
         else Current song is editable
             User->>View: Choose None or a meaningful multi-part grouping preset
@@ -345,7 +334,7 @@ sequenceDiagram
     rect rgb(236, 236, 255)
         Note over User,Defaults: Delete Measure
         User->>View: Tap delete button on a sequence row
-        alt Current song is read-only
+        alt Current song editing is locked
             View->>View: delete button is disabled
         else Current song is editable
             alt Only one measure remains

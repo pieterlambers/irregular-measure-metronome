@@ -322,15 +322,6 @@ struct ContentView: View {
                     .accessibilityLabel("Song name")
                     .focused($isSongNameFocused)
 
-                songIconButton(
-                    metronome.isCurrentSongReadOnly ? "lock.fill" : "lock.open",
-                    label: metronome.isCurrentSongReadOnly ? "Unlock song" : "Lock song"
-                ) {
-                    cancelTemporaryUnlock()
-                    metronome.setCurrentSongReadOnly(!metronome.isCurrentSongReadOnly)
-                    isFirstMeasureNumberFocused = false
-                }
-
                 songIconButton("plus", label: "New song") {
                     metronome.createSong()
                     isSongPickerExpanded = false
@@ -398,11 +389,11 @@ struct ContentView: View {
 
                         Spacer(minLength: 0)
 
-                        if song.readOnly {
+                        if metronome.isSongEditingLocked(song) {
                             Image(systemName: "lock.fill")
                                 .font(.system(size: 10, weight: .semibold))
                                 .foregroundStyle(muted)
-                                .accessibilityLabel("Read only")
+                                .accessibilityLabel("Editing locked")
                         }
                     }
                     .frame(height: 34)
@@ -1315,7 +1306,7 @@ struct ContentView: View {
 
     @ViewBuilder
     private func temporaryUnlockOverlay(afterUnlock action: (() -> Void)? = nil) -> some View {
-        if metronome.isCurrentSongReadOnly {
+        if metronome.isCurrentSongEditingLocked {
             Rectangle()
                 .fill(Color.white.opacity(0.001))
                 .contentShape(Rectangle())
@@ -1326,14 +1317,14 @@ struct ContentView: View {
     }
 
     private func unlockCurrentSongTemporarily(afterUnlock action: (() -> Void)? = nil) {
-        guard metronome.isCurrentSongReadOnly || temporaryUnlockTask != nil else {
+        guard metronome.isCurrentSongEditingLocked || temporaryUnlockTask != nil else {
             action?()
             return
         }
 
         let songID = metronome.currentSongID
-        if metronome.isCurrentSongReadOnly {
-            metronome.setCurrentSongReadOnly(false)
+        if metronome.isCurrentSongEditingLocked {
+            metronome.unlockCurrentSongEditingTemporarily()
         }
         scheduleTemporaryRelock(for: songID)
 
@@ -1353,7 +1344,8 @@ struct ContentView: View {
     }
 
     private func scheduleTemporaryRelock(for songID: UUID) {
-        cancelTemporaryUnlock()
+        temporaryUnlockTask?.cancel()
+        temporaryUnlockTask = nil
         let temporaryUnlockDuration = temporaryUnlockDuration
         temporaryUnlockTask = Task {
             try? await Task.sleep(for: temporaryUnlockDuration)
@@ -1362,7 +1354,7 @@ struct ContentView: View {
                 guard metronome.currentSongID == songID,
                       metronome.canEditCurrentSong
                 else { return }
-                metronome.setCurrentSongReadOnly(true)
+                metronome.clearTemporaryEditingUnlock(for: songID)
                 temporaryUnlockTask = nil
             }
         }
@@ -1371,6 +1363,7 @@ struct ContentView: View {
     private func cancelTemporaryUnlock() {
         temporaryUnlockTask?.cancel()
         temporaryUnlockTask = nil
+        metronome.clearTemporaryEditingUnlock()
     }
 
     private func stepNumerator(for measure: TimeSignature, direction: Int) {

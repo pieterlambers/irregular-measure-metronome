@@ -625,12 +625,13 @@ final class TapTempoTests: XCTestCase {
         XCTAssertEqual(model.tapTempoText, "80")
     }
 
-    func testTapTempoWorksForReadOnlySongsAndStopsPlayback() {
+    func testTapTempoWorksForEditingLockedSongsAndStopsPlayback() {
         var fakeNow = Date(timeIntervalSince1970: 1_000)
         let harness = ModelHarness(now: { fakeNow })
         let model = harness.model
+        let builtInSong = model.songs.first { $0.id == ForestForTheTreesSong.measure105To136ID }!
+        model.selectSong(builtInSong)
         let initialStopCount = harness.clickEngine.stopCount
-        model.setCurrentSongReadOnly(true)
         model.start()
 
         model.tapTempo()
@@ -642,7 +643,7 @@ final class TapTempoTests: XCTestCase {
         XCTAssertFalse(model.isPlaying)
         XCTAssertEqual(harness.clickEngine.stopCount, initialStopCount + 1)
         XCTAssertEqual(model.currentSong.bpm, 150)
-        XCTAssertTrue(model.isCurrentSongReadOnly)
+        XCTAssertTrue(model.isCurrentSongEditingLocked)
     }
 
     func testTapTempoClampsBPM() {
@@ -799,10 +800,9 @@ final class SongLibraryPersistenceTests: XCTestCase {
         XCTAssertEqual(model.songs.filter { $0.id == ForestForTheTreesSong.measure446To472ID }.count, 1)
     }
 
-    func testBuiltInSongsDefaultToReadOnly() throws {
+    func testBuiltInSongsDefaultToEditingLocked() throws {
         let userDefaults = makeUserDefaults()
-        var editedBuiltIn = ForestForTheTreesSong.measure446To472
-        editedBuiltIn.isReadOnly = nil
+        let editedBuiltIn = ForestForTheTreesSong.measure446To472
         let library = PersistedSongLibrary(
             currentSongID: editedBuiltIn.id,
             songs: [editedBuiltIn]
@@ -811,27 +811,27 @@ final class SongLibraryPersistenceTests: XCTestCase {
 
         let model = MetronomeModel(clickEngine: FakeClickEngine(), userDefaults: userDefaults)
 
-        XCTAssertTrue(model.isCurrentSongReadOnly)
-        XCTAssertTrue(model.songs.first { $0.id == ForestForTheTreesSong.measure105To136ID }?.readOnly ?? false)
-        XCTAssertTrue(model.songs.first { $0.id == ForestForTheTreesSong.measure446To472ID }?.readOnly ?? false)
+        XCTAssertTrue(model.isCurrentSongEditingLocked)
+        XCTAssertTrue(model.isSongEditingLocked(model.songs.first { $0.id == ForestForTheTreesSong.measure105To136ID }!))
+        XCTAssertTrue(model.isSongEditingLocked(model.songs.first { $0.id == ForestForTheTreesSong.measure446To472ID }!))
     }
 
-    func testReadOnlySongRejectsCompositionEditsUntilUnlocked() {
+    func testEditingLockedSongRejectsCompositionEditsUntilTemporarilyUnlocked() {
         let harness = ModelHarness()
         let model = harness.model
+        let builtInSong = model.songs.first { $0.id == ForestForTheTreesSong.measure105To136ID }!
+        model.selectSong(builtInSong)
         let originalName = model.currentSongName
         let originalStartMeasure = model.startMeasureNumber
         let originalSequence = model.sequence
-
-        model.setCurrentSongReadOnly(true)
 
         model.currentSongName = "Locked Edit"
         model.bpm = 160
         model.startMeasureNumber = 12
         model.isCountInFourFourEnabled = true
         model.isLoopRangeEnabled = true
-        model.updateLoopStartMeasureNumber(2)
-        model.updateLoopEndMeasureNumber(2)
+        model.updateLoopStartMeasureNumber(originalStartMeasure + 1)
+        model.updateLoopEndMeasureNumber(originalStartMeasure + 1)
         XCTAssertFalse(model.insertMeasure(at: 0, numerator: 5, denominator: 8))
         XCTAssertFalse(model.duplicateMeasure(at: 1))
         XCTAssertFalse(model.updateMeasure(model.sequence[0], numerator: 6, denominator: 8))
@@ -848,12 +848,12 @@ final class SongLibraryPersistenceTests: XCTestCase {
         XCTAssertEqual(model.loopEndIndex, 1)
         XCTAssertEqual(model.sequence, originalSequence)
         XCTAssertEqual(model.tapTempoText, "TAP")
-        XCTAssertTrue(model.isCurrentSongReadOnly)
+        XCTAssertTrue(model.isCurrentSongEditingLocked)
         XCTAssertEqual(model.currentSong.bpm, 160)
         XCTAssertEqual(model.currentSong.loopRange, PersistedLoopRange(isEnabled: true, startIndex: 1, endIndex: 1))
         XCTAssertEqual(model.currentSong.countInFourFourEnabled, true)
 
-        model.setCurrentSongReadOnly(false)
+        model.unlockCurrentSongEditingTemporarily()
 
         model.currentSongName = "Unlocked Edit"
         model.bpm = 160
@@ -862,14 +862,15 @@ final class SongLibraryPersistenceTests: XCTestCase {
         XCTAssertEqual(model.bpm, 160)
     }
 
-    func testDuplicateOfReadOnlySongIsEditable() {
+    func testDuplicateOfEditingLockedSongIsEditable() {
         let harness = ModelHarness()
         let model = harness.model
-        model.setCurrentSongReadOnly(true)
+        let builtInSong = model.songs.first { $0.id == ForestForTheTreesSong.measure105To136ID }!
+        model.selectSong(builtInSong)
 
         model.duplicateCurrentSong()
 
-        XCTAssertFalse(model.isCurrentSongReadOnly)
+        XCTAssertFalse(model.isCurrentSongEditingLocked)
         model.currentSongName = "Editable Copy"
         XCTAssertEqual(model.currentSongName, "Editable Copy")
     }

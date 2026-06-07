@@ -3,10 +3,10 @@
 ## Responsibilities
 
 - Acts as the source of truth for metronome state.
-- Publishes UI state including `songs`, `currentSongID`, `currentSongName`, current song read-only/editable state, `bpm`, `isPlaying`, `currentBeat`, `currentMeasureIndex`, `loopCount`, `isCountingIn`, `isCountInFourFourEnabled`, `sequence`, `startMeasureNumber`, `isLoopRangeEnabled`, loop boundary indices, `tapTempoText`, and `flashBPM`.
-- Manages the local song library, including selecting songs, creating default songs, duplicating the current song, toggling the current song's read-only flag, resetting built-in songs to their hardcoded read-only version, deleting the current song when another song exists, and renaming editable songs.
-- Treats built-in songs as read-only by default and makes duplicated songs editable copies.
-- Rejects composition-editing mutations for read-only songs, including name, first measure number, sequence insertion/deletion, signature changes, and grouping changes, while leaving playback, tempo, count-in, and loop-range settings available.
+- Publishes UI state including `songs`, `currentSongID`, `currentSongName`, current song editing-lock/editable state, `bpm`, `isPlaying`, `currentBeat`, `currentMeasureIndex`, `loopCount`, `isCountingIn`, `isCountInFourFourEnabled`, `sequence`, `startMeasureNumber`, `isLoopRangeEnabled`, loop boundary indices, `tapTempoText`, and `flashBPM`.
+- Manages the local song library, including selecting songs, creating default songs, duplicating the current song, temporarily unlocking built-in song editing, resetting built-in songs to their hardcoded version, deleting the current song when another song exists, and renaming editable songs.
+- Treats built-in songs as editing-locked by default and makes duplicated songs editable copies.
+- Rejects composition-editing mutations for editing-locked songs, including name, first measure number, sequence insertion/deletion, signature changes, and grouping changes, while leaving playback, tempo, count-in, and loop-range settings available.
 - Starts playback by resetting published playback counters and asking `ClickEngine` to start buffered scheduling, with a four-beat 4/4 count-in when enabled.
 - Starts playback from tapped measures, keeping loop range active for taps inside or before the range, and disabling loop range for taps after the range.
 - Stops playback by incrementing `playbackGeneration`, stopping `ClickEngine`, cancelling flash timing, and resetting transient playback indicators.
@@ -15,7 +15,7 @@
 - Publishes the current beat, measure, loop count, count-in state, and flash state in response to current beat callbacks.
 - Derives whether a sequence measure should receive the active playback highlight via `isPlayedMeasure(index:)`, which requires playback, a real sequence beat, and no count-in.
 - Stops playback when BPM changes during playback so the next start uses freshly buffered audio at the new tempo.
-- Persists BPM, the 4/4 count-in setting, and the read-only flag as part of the current song.
+- Persists BPM and the 4/4 count-in setting as part of the current song.
 - Manages tap tempo timing, averaging, BPM clamping, and tap reset behavior.
 - Derives displayed measure numbers from `startMeasureNumber + sequence index`.
 - Maps displayed loop range measure numbers to sequence indices and passes the active inclusive range to `ClickEngine`.
@@ -23,7 +23,7 @@
 - Owns grouping normalization and preset generation so persisted grouping, displayed labels, and picker choices share the same meaningful multi-part grouping rules.
 - Saves and loads the local song library through `UserDefaults`.
 - Migrates the previous single-composition format and legacy persisted measure sequences into the current song-library format.
-- Sanitizes persisted song data, including names, BPM, measure numbers, sequences, optional grouping arrays, and read-only defaults, and falls back to a default song when needed.
+- Sanitizes persisted song data, including names, BPM, measure numbers, sequences, and optional grouping arrays, and falls back to a default song when needed.
 
 ## Future Change Notes
 

@@ -88,15 +88,15 @@ The compact time signature controls in `ContentView` reuse `updateMeasure(_:nume
 
 - loading a persisted song library and selecting the saved current song;
 - falling back when the saved current song ID is missing;
-- sanitizing names, BPM, start measure number, sequences, grouping, and built-in read-only defaults;
+- sanitizing names, BPM, start measure number, sequences, grouping, and built-in editing-lock defaults;
 - falling back to the default song when stored songs are invalid;
 - migrating `metro.composition.v2`;
 - migrating `metro.sequence.v1`;
 - including the built-in song exactly once;
-- preserving edits to persisted built-in songs and resetting them to their hardcoded read-only version on request;
-- treating built-in songs as read-only by default;
-- rejecting composition edit mutations for read-only songs until they are unlocked while allowing tempo, count-in, and loop-range settings;
-- making duplicates of read-only songs editable.
+- preserving edits to persisted built-in songs and resetting them to their hardcoded version on request;
+- treating built-in songs as editing-locked by default;
+- rejecting composition edit mutations for editing-locked songs until they are temporarily unlocked while allowing tempo, count-in, and loop-range settings;
+- making duplicates of editing-locked songs editable.
 
 ## Test Seams
 

@@ -17,16 +17,16 @@ flowchart TD
     A -->|"injects via .environmentObject"| C["ContentView<br/>SwiftUI View"]
 
     C -->|"reads state"| B
-    C -->|"user actions:<br/>song select/name/create/duplicate/delete,<br/>song read-only toggle,<br/>play/pause, count-in toggle, tap tempo,<br/>BPM slider, start measure,<br/>loop range,<br/>insert/delete measure,<br/>time signature controls,<br/>grouping picker"| B
+    C -->|"user actions:<br/>song select/name/create/duplicate/delete,<br/>temporary song unlock,<br/>play/pause, count-in toggle, tap tempo,<br/>BPM slider, start measure,<br/>loop range,<br/>insert/delete measure,<br/>time signature controls,<br/>grouping picker"| B
 
-    B -->|"publishes UI state:<br/>songs, currentSongID, currentSongName,<br/>read-only/editability,<br/>bpm, isPlaying, currentBeat,<br/>currentMeasureIndex, loopCount,<br/>isCountingIn, flashBPM,<br/>sequence, startMeasureNumber,<br/>loop range, count-in setting, tapTempoText,<br/>active played-measure predicate"| C
+    B -->|"publishes UI state:<br/>songs, currentSongID, currentSongName,<br/>editing lock/editability,<br/>bpm, isPlaying, currentBeat,<br/>currentMeasureIndex, loopCount,<br/>isCountingIn, flashBPM,<br/>sequence, startMeasureNumber,<br/>loop range, count-in setting, tapTempoText,<br/>active played-measure predicate"| C
 
     B -->|"starts/stops buffered playback<br/>and receives beat callbacks"| D["ClickEngine"]
     D -->|"AVAudioEngine + AVAudioPlayerNode<br/>queued click + silence buffers"| E["Audio Output"]
     D -->|"scheduler queue + DispatchSourceTimer<br/>keeps audio queue filled"| K["Buffered Beat Queue"]
     D -->|"onBeat callback on main queue"| B
 
-    B -->|"stores"| F["Song[]<br/>name, bpm, sequence,<br/>start measure, loop range,<br/>count-in setting, read-only flag"]
+    B -->|"stores"| F["Song[]<br/>name, bpm, sequence,<br/>start measure, loop range,<br/>count-in setting"]
     F -->|"sequence elements are"| G["TimeSignature<br/>id, numerator, denominator,<br/>optional grouping, label"]
     B -->|"derives display numbers from"| L["startMeasureNumber + sequence index"]
 
@@ -50,9 +50,9 @@ flowchart TD
 
 - Use the participant links above for reliable navigation. Some Markdown previews disable clickable Mermaid nodes.
 - `IrregularMeasureMetronomeApp` creates a single shared `MetronomeModel` and injects it into the SwiftUI environment.
-- `ContentView` is the only UI surface in this project and drives all user interaction, including song library controls, read-only song locking, playback controls, count-in selection, tap tempo, start measure number, loop range selection, time signature control editing, grouping selection, active measure highlighting, and beat visualization.
+- `ContentView` is the only UI surface in this project and drives all user interaction, including song library controls, temporary editing unlock, playback controls, count-in selection, tap tempo, start measure number, loop range selection, time signature control editing, grouping selection, active measure highlighting, and beat visualization.
 - `ContentView` adapts the same controls for compact iPhone-width layouts and regular-width iPad layouts; compact layouts can switch into a measure-focused mode while the sequence list/grid auto-scrolls to keep the played measure visible.
-- `MetronomeModel` owns published song-library state, read-only edit guards, playback state, playback lifecycle, tap tempo, sequence management, grouping validation, loop range mapping, consecutive measure numbering, active played-measure derivation, persistence, and stale-callback filtering.
+- `MetronomeModel` owns published song-library state, built-in song edit guards, playback state, playback lifecycle, tap tempo, sequence management, grouping validation, loop range mapping, consecutive measure numbering, active played-measure derivation, persistence, and stale-callback filtering.
 - `ClickEngine` owns accented, subaccented, and regular audio generation, buffered beat scheduling, silence-buffer caching, and audio-to-model beat callbacks.
 - `Task.sleep` is not the beat-loop scheduler; it handles short UI delays for BPM flashing and tap-tempo reset.
 - `FlowLayout` wraps the main beat dots and the compact sequence dots inside either adaptive layout.

@@ -45,8 +45,7 @@ enum ForestForTheTreesSong {
                 signature(4, 4) // m. 136
             ],
             loopRange: nil,
-            countInFourFourEnabled: false,
-            isReadOnly: true
+            countInFourFourEnabled: false
         )
     }
 
@@ -86,8 +85,7 @@ enum ForestForTheTreesSong {
                 signature(4, 4) // m. 472
             ],
             loopRange: nil,
-            countInFourFourEnabled: false,
-            isReadOnly: true
+            countInFourFourEnabled: false
         )
     }
 
