@@ -55,7 +55,7 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 - Lock the current song and confirm the name, first-measure, grouping, insert, delete, and signature controls become disabled while Play/Stop, tempo, count-in, and loop-range controls remain usable.
 - Unlock the current song with the lock button and confirm editing works again and the song does not automatically re-lock.
 - Select each built-in song and confirm it is read-only by default.
-- On a read-only song, long-press locked edit controls such as song name, first measure number, insert, delete, grouping, and measure numerator/denominator. Confirm each unlocks temporarily, editing works, each edit restarts the timeout, and the song locks again after 3 seconds with no edits.
+- On a read-only song, long-press locked edit controls such as song name, first measure number, insert, delete, grouping, and measure numerator/denominator. Confirm each unlocks temporarily, the held control immediately performs its edit action where applicable, each edit restarts the timeout, and the song locks again after 3 seconds with no edits.
 - Create a new song.
 - Duplicate a read-only song and confirm the copy is editable.
 - Expand the inline song picker and switch between songs.
@@ -70,6 +70,7 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 
 - Confirm every measure row shows compact numerator and denominator controls without opening a separate editor.
 - Drag vertically on the numerator and denominator controls to step to a common signature like `5/8`, and confirm the measure updates immediately while the active value remains visible in the floating readout above the finger.
+- On a read-only song, long-press a numerator or denominator, keep holding, then drag vertically. Confirm the song unlocks and the same held drag edits the value without needing a second touch.
 - Drag elsewhere in the sequence list and confirm the list scrolls without accidentally changing the signature.
 - Edit a measure with grouping like `7/8 2+2+3`, if the grouping picker exposes that preset for the measure.
 - Confirm simple meters such as `2/4`, `3/4`, and `4/4` do not show single-number grouping choices that are equivalent to `None`.

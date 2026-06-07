@@ -130,4 +130,13 @@ xcodebuild test \
   -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
+Current simulator smoke command used for iOS 26.5:
+
+```sh
+/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test \
+  -project IrregularMeasureMetronome.xcodeproj \
+  -scheme IrregularMeasureMetronome \
+  -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5'
+```
+
 The Command Line Tools-only developer directory is not enough for this app's iOS test target; `xcodebuild` needs full Xcode selected with `xcode-select`.

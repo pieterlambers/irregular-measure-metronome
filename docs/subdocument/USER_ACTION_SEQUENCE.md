@@ -267,13 +267,15 @@ sequenceDiagram
         User->>View: Tap insert button at a sequence boundary
         alt Current song is read-only
             View->>View: insert and signature drag-editing controls are disabled
-            User->>View: Long-press a locked composition-edit control
+            User->>View: Long-press a locked composition-edit control and keep holding
             View->>Model: setCurrentSongReadOnly(false)
             Model->>Model: save current song snapshot with read-only flag cleared
             Model->>Defaults: save encoded song library
             View->>Timer: start 3-second temporary unlock timer
             Model-->>View: publish unlocked editability state
-            User->>View: Drag vertically on numerator or denominator
+            User->>View: Continue the same hold into the underlying edit action
+            View->>View: focus text, open grouping, insert/delete, or begin signature drag editing
+            User->>View: Drag vertically on numerator or denominator if editing a signature value
             View->>Model: updateMeasure(measure, numerator, denominator)
             Model->>Model: update TimeSignature and clean invalid grouping
             Model->>Defaults: save encoded song library
