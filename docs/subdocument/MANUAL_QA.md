@@ -69,7 +69,8 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 ## Measure Editing
 
 - Confirm every measure row shows compact numerator and denominator controls without opening a separate editor.
-- Drag vertically on the numerator and denominator controls to step to a common signature like `5/8`, and confirm the measure updates immediately while the active value remains visible in the floating readout above the finger.
+- Drag vertically on the numerator and denominator controls to step to a common signature like `5/8`, and confirm the measure updates immediately while the active wheel expands inside the measure row.
+- Confirm the expanded wheel keeps the current value highlighted in yellow, shows nearby values above and below, and can grow taller than the compact measure row without being clipped by the scroll window.
 - On a read-only song, long-press a numerator or denominator, keep holding, then drag vertically. Confirm the song unlocks and the same held drag edits the value without needing a second touch.
 - Drag elsewhere in the sequence list and confirm the list scrolls without accidentally changing the signature.
 - Edit a measure with grouping like `7/8 2+2+3`, if the grouping picker exposes that preset for the measure.

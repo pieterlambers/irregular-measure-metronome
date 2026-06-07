@@ -50,7 +50,8 @@ struct ContentView: View {
     private let minimumMeasureCardWidth: CGFloat = 320
     private let narrowMeasureCardThreshold: CGFloat = 360
     private let signatureNumberControlWidth: CGFloat = 48
-    private let signatureNumberControlHeight: CGFloat = 62
+    private let signatureNumberControlCompactHeight: CGFloat = 62
+    private let signatureNumberControlExpandedHeight: CGFloat = 96
     private let signatureDragStepDistance: CGFloat = 28
     private let minimumSignatureFeedbackInterval: TimeInterval = 1.0 / 24.0
     private let temporaryUnlockDuration: Duration = .seconds(3)
@@ -1169,7 +1170,10 @@ struct ContentView: View {
     }
 
     private func measureSignatureEditor(for measure: TimeSignature) -> some View {
-        HStack(spacing: 4) {
+        let isActive = activeSignatureDrag?.measureID == measure.id
+        let editorHeight = isActive ? signatureNumberControlExpandedHeight : signatureNumberControlCompactHeight
+
+        return HStack(spacing: 4) {
             signatureNumberControl(
                 value: currentMeasure(for: measure).numerator,
                 options: numeratorOptions(for: measure),
@@ -1193,9 +1197,10 @@ struct ContentView: View {
                 stepAction: { stepDenominator(for: measure, direction: $0) }
             )
         }
-        .frame(width: 112, height: signatureNumberControlHeight, alignment: .center)
+        .frame(width: 112, height: editorHeight, alignment: .center)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Time signature \(measure.label)")
+        .animation(.easeOut(duration: 0.12), value: isActive)
     }
 
     private func signatureNumberControl(
@@ -1208,54 +1213,45 @@ struct ContentView: View {
     ) -> some View {
         let dragID = SignatureDrag(measureID: measureID, component: component)
         let isActive = activeSignatureDrag == dragID
+        let visibleOffsets = isActive ? [2, 1, 0, -1, -2] : [1, 0, -1]
+        let controlHeight = isActive ? signatureNumberControlExpandedHeight : signatureNumberControlCompactHeight
 
-        return ZStack(alignment: .top) {
-            VStack(spacing: 2) {
-                Text("\(adjacentValue(to: value, in: options, direction: 1))")
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                    .foregroundStyle(muted.opacity(isActive ? 0.76 : 0.42))
-                    .monospacedDigit()
-                    .frame(width: signatureNumberControlWidth, height: 14)
+        return VStack(spacing: isActive ? 3 : 2) {
+            ForEach(visibleOffsets, id: \.self) { offset in
+                let isCurrentValue = offset == 0
+                let distance = abs(offset)
 
-                Text("\(value)")
-                    .font(.system(size: 23, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(.white)
+                Text("\(adjacentValue(to: value, in: options, direction: offset))")
+                    .font(.system(
+                        size: isCurrentValue ? (isActive ? 25 : 23) : (isActive ? 12 : 11),
+                        weight: isCurrentValue ? .semibold : .medium,
+                        design: .monospaced
+                    ))
+                    .foregroundStyle(signatureWheelTextColor(isCurrentValue: isCurrentValue, isActive: isActive, distance: distance))
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
-                    .frame(width: signatureNumberControlWidth, height: 30)
-                    .background(
-                        (isActive ? accent.opacity(0.24) : Color.white.opacity(0.08)),
-                        in: Capsule()
+                    .frame(
+                        width: signatureNumberControlWidth,
+                        height: isCurrentValue ? (isActive ? 34 : 30) : (isActive ? 14 : 14)
                     )
-                    .overlay(Capsule().stroke(isActive ? accent.opacity(0.65) : .clear, lineWidth: 1))
-
-                Text("\(adjacentValue(to: value, in: options, direction: -1))")
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                    .foregroundStyle(muted.opacity(isActive ? 0.76 : 0.42))
-                    .monospacedDigit()
-                    .frame(width: signatureNumberControlWidth, height: 14)
-            }
-            .frame(width: signatureNumberControlWidth, height: signatureNumberControlHeight)
-
-            if isActive {
-                Text("\(value)")
-                    .font(.system(size: 18, weight: .bold, design: .monospaced))
-                    .foregroundStyle(background)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-                    .frame(width: 54, height: 30)
-                    .background(accent, in: Capsule())
-                    .overlay(Capsule().stroke(.white.opacity(0.35), lineWidth: 1))
-                    .shadow(color: .black.opacity(0.35), radius: 8, y: 4)
-                    .offset(y: -38)
-                    .transition(.scale(scale: 0.9).combined(with: .opacity))
-                    .allowsHitTesting(false)
+                    .background {
+                        if isCurrentValue {
+                            Capsule()
+                                .fill(isActive ? accent : Color.white.opacity(0.08))
+                        }
+                    }
+                    .overlay {
+                        if isCurrentValue {
+                            Capsule()
+                                .stroke(isActive ? .white.opacity(0.35) : .clear, lineWidth: 1)
+                        }
+                    }
+                    .shadow(color: isCurrentValue && isActive ? .black.opacity(0.24) : .clear, radius: 6, y: 3)
             }
         }
-        .frame(width: signatureNumberControlWidth, height: signatureNumberControlHeight)
-        .animation(.easeOut(duration: 0.10), value: isActive)
+        .frame(width: signatureNumberControlWidth, height: controlHeight)
+        .animation(.easeOut(duration: 0.12), value: isActive)
         .contentShape(Rectangle())
         .gesture(
             signatureDragGesture(dragID: dragID, stepAction: stepAction),
@@ -1397,6 +1393,14 @@ struct ContentView: View {
 
     private func adjacentValue(to value: Int, in options: [Int], direction: Int) -> Int {
         steppedValue(value, in: options, direction: direction)
+    }
+
+    private func signatureWheelTextColor(isCurrentValue: Bool, isActive: Bool, distance: Int) -> Color {
+        if isCurrentValue {
+            return isActive ? background : .white
+        }
+
+        return muted.opacity(isActive ? (distance == 1 ? 0.78 : 0.42) : 0.42)
     }
 
     private func steppedValue(_ value: Int, in options: [Int], direction: Int) -> Int {

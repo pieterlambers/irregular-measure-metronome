@@ -19,7 +19,7 @@
 - Lets the user enable a loop range and set inclusive `from` / `to` measure numbers.
 - Lets the user tap a measure card to start playback at that measure, with loop range rules handled by `MetronomeModel`.
 - Lets the user insert a measure at any sequence boundary by copying the local context: before the first row copies the first measure, and other boundaries copy the previous measure.
-- Lets the user adjust numerator and denominator directly in every measure row by dragging vertically on compact number controls, with an active readout that keeps the selected value visible during the drag.
+- Lets the user adjust numerator and denominator directly in every measure row by dragging vertically on compact number controls; the active control expands inline into a taller wheel with the selected value highlighted and nearby values visible during the drag.
 - Provides a keyboard `Done` action for text-field numeric editors such as the first displayed measure number.
 - Lets the user choose meaningful multi-part grouping presets per measure from an inline row picker instead of tapping the small dots directly, omitting single-group choices that behave the same as `None`.
 - Disables delete actions when the sequence has only one measure.

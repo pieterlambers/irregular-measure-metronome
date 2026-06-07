@@ -10,7 +10,7 @@
 - Sets tempo by tapping the TEMPO button repeatedly.
 - Types or steps the first displayed measure number.
 - Inserts measures at sequence boundaries by copying the nearby measure.
-- Edits a measure by stepping compact numerator and denominator controls in the inserted or existing measure row.
+- Edits a measure by dragging compact numerator and denominator wheel controls in the inserted or existing measure row.
 - Temporarily unlocks a read-only song by long-pressing a locked composition-edit control, then edits before 3 idle seconds pass.
 - Chooses optional grouping presets for a measure, such as `2+2+3` in `7/8`.
 - Deletes existing measures when more than one measure remains.
