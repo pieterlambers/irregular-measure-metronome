@@ -41,11 +41,13 @@ Use this checklist on real devices before TestFlight or App Store submission. Un
 ## Audio Interruptions And Routes
 
 - Start playback, activate Siri, then dismiss Siri.
-- Confirm playback pauses or resumes acceptably after the interruption.
+- Confirm playback stops and the Play control shows the stopped state.
+- Press Play again and confirm playback restarts normally.
 - Start playback with headphones connected.
 - Disconnect the headphones and confirm the app does not crash.
 - Reconnect headphones and confirm playback can continue or be restarted.
 - If possible, test an incoming phone call interruption.
+- Confirm the call interruption stops playback and requires pressing Play again afterward.
 
 ## Song Library
 

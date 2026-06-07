@@ -2,6 +2,8 @@ import AVFoundation
 import Foundation
 
 protocol ClickEngineProtocol: AnyObject {
+    var onAudioSessionInterrupted: (() -> Void)? { get set }
+
     func start(
         bpm: Int,
         sequence: [TimeSignature],
@@ -18,6 +20,8 @@ protocol ClickEngineProtocol: AnyObject {
 }
 
 final class ClickEngine: ClickEngineProtocol {
+    var onAudioSessionInterrupted: (() -> Void)?
+
     private var engine: AVAudioEngine?
     private var player: AVAudioPlayerNode?
     private let schedulerQueue = DispatchQueue(label: "metro.click-engine.scheduler")
@@ -33,7 +37,6 @@ final class ClickEngine: ClickEngineProtocol {
     private var nextCallbackOffset: TimeInterval = 0
     private var callbackStartTime = DispatchTime.now()
     private var isObservingAudioSession = false
-    private var wasPlayingBeforeInterruption = false
 
     private let maxQueuedBeats = 12
 
@@ -178,20 +181,13 @@ final class ClickEngine: ClickEngineProtocol {
 
             switch type {
             case .began:
-                self.wasPlayingBeforeInterruption = player.isPlaying
-                player.pause()
+                self.stopSchedulingOnQueue()
+                self.scheduleGeneration += 1
+                player.stop()
                 engine.pause()
+                self.onAudioSessionInterrupted?()
             case .ended:
-                guard self.wasPlayingBeforeInterruption else { return }
-
-                let optionValue = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
-                let options = AVAudioSession.InterruptionOptions(rawValue: optionValue)
-                if options.contains(.shouldResume) {
-                    self.activateAudioSession()
-                    self.startAudioEngineIfNeeded()
-                    player.play()
-                }
-                self.wasPlayingBeforeInterruption = false
+                break
             @unknown default:
                 break
             }

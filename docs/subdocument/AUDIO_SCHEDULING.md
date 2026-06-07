@@ -58,7 +58,8 @@ This callback is used for UI state, not for audio playback. When it fires, `Metr
 
 - Changing `bpm` while playback is running stops playback so the next Play action starts with a freshly buffered queue at the new tempo.
 - `ClickEngine` generation checks prevent stale scheduler work and stale callbacks from updating the model after a stop or restart.
-- Audio session interruptions and route changes reactivate the audio session and engine, then resume the player when playback should continue.
+- Audio session interruptions stop playback through `MetronomeModel.stop()` so calls, Siri, and similar system events leave the metronome stopped until the user presses Play again.
+- Route changes reactivate the audio session and engine, then resume the player only when buffered playback is still active.
 - `MetronomeModel.stop()` increments `playbackGeneration`, tells `ClickEngine` to stop, cancels flash state, resets `currentBeat` to `-1`, and clears count-in state.
 - Inserting or deleting a measure persists the updated sequence and stops playback when it was running.
 

@@ -65,6 +65,7 @@ The compact time signature controls in `ContentView` reuse `updateMeasure(_:nume
 
 - `start()` resets playback state and calls the click engine with expected BPM, sequence, beat, loop range, loop count, and count-in settings;
 - `stop()` clears transient playback state and stops the click engine;
+- audio session interruptions stop playback and cause later beat callbacks from the interrupted playback generation to be ignored;
 - BPM changes while playing stop playback instead of rebuffering mid-stream;
 - count-in enabled playback starts with four count-in beats;
 - fake beat callbacks update visible playback state and flash state;

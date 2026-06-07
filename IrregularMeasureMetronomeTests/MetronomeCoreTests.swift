@@ -399,6 +399,29 @@ final class MetronomeModelPlaybackTests: XCTestCase {
         XCTAssertEqual(harness.clickEngine.stopCount, initialStopCount + 1)
     }
 
+    func testAudioSessionInterruptionStopsPlaybackAndIgnoresStaleBeatCallbacks() async {
+        let harness = ModelHarness()
+        let model = harness.model
+        let initialStopCount = harness.clickEngine.stopCount
+        model.isCountInFourFourEnabled = true
+        model.start()
+        let start = harness.clickEngine.starts.last
+        start?.onBeat(0, 2, 1, true)
+        await Task.yield()
+
+        harness.clickEngine.simulateAudioSessionInterruption()
+        await Task.yield()
+        start?.onBeat(1, 1, 2, false)
+        await Task.yield()
+
+        XCTAssertFalse(model.isPlaying)
+        XCTAssertEqual(model.currentBeat, -1)
+        XCTAssertFalse(model.isCountingIn)
+        XCTAssertFalse(model.flashBPM)
+        XCTAssertEqual(model.currentMeasureIndex, 0)
+        XCTAssertEqual(harness.clickEngine.stopCount, initialStopCount + 1)
+    }
+
     func testBPMChangeWhilePlayingStopsPlayback() async {
         let harness = ModelHarness()
         let model = harness.model
@@ -921,6 +944,8 @@ private final class ModelHarness {
 }
 
 private final class FakeClickEngine: ClickEngineProtocol {
+    var onAudioSessionInterrupted: (() -> Void)?
+
     struct StartCall {
         let bpm: Int
         let sequence: [TimeSignature]
@@ -962,6 +987,10 @@ private final class FakeClickEngine: ClickEngineProtocol {
 
     func stop() {
         stopCount += 1
+    }
+
+    func simulateAudioSessionInterruption() {
+        onAudioSessionInterrupted?()
     }
 }
 

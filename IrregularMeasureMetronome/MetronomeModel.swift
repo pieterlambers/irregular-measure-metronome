@@ -238,6 +238,11 @@ final class MetronomeModel: ObservableObject {
         applySong(currentSong, savePreviousSong: false)
         normalizeLoopRange()
         saveSongLibrary()
+        clickEngine.onAudioSessionInterrupted = { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.stop()
+            }
+        }
     }
 
     var tempoName: String {
