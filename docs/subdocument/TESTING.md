@@ -121,16 +121,13 @@ Those areas are better covered by simulator/device smoke testing and manual audi
 
 ## How To Run
 
-Run the test target from Xcode, or from a machine with full Xcode selected:
+Run the test target from Xcode, or use the repo test script:
 
 ```sh
-xcodebuild test \
-  -project IrregularMeasureMetronome.xcodeproj \
-  -scheme IrregularMeasureMetronome \
-  -destination 'platform=iOS Simulator,name=iPhone 15'
+./scripts/test-unit.sh
 ```
 
-Current simulator smoke command used for iOS 26.5:
+The script pins full Xcode and the known working simulator destination. The equivalent command is:
 
 ```sh
 /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test \
@@ -140,3 +137,5 @@ Current simulator smoke command used for iOS 26.5:
 ```
 
 The Command Line Tools-only developer directory is not enough for this app's iOS test target; `xcodebuild` needs full Xcode selected with `xcode-select`.
+
+When Codex runs this script, it should request elevated execution on the first attempt. The iOS simulator run needs access to CoreSimulatorService and Xcode's user DerivedData/log directories, which are outside the normal workspace sandbox.
