@@ -3,86 +3,289 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Brass Pulse KFK Privacy Policy</title>
+  <title>Brass Pulse KFK</title>
   <style>
     :root {
       color-scheme: light dark;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       line-height: 1.55;
-      background: #faf8f3;
-      color: #211f1c;
+      background: #f7faf8;
+      color: #17201c;
+      --accent: #087c68;
+      --accent-strong: #045c4d;
+      --surface: #ffffff;
+      --border: #d8e3de;
+      --muted: #53615b;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
       margin: 0;
     }
 
-    main {
-      max-width: 760px;
+    header, main, footer {
+      width: min(100% - 32px, 980px);
       margin: 0 auto;
-      padding: 48px 24px;
+    }
+
+    header {
+      padding: 48px 0 24px;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    a {
+      color: var(--accent-strong);
+      font-weight: 700;
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
+    }
+
+    nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      text-decoration: none;
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: clamp(2rem, 5vw, 3rem);
-      line-height: 1.1;
+      max-width: 760px;
+      margin: 0 0 12px;
+      font-size: clamp(2.35rem, 6vw, 4.5rem);
+      line-height: 1;
+      letter-spacing: 0;
     }
 
     h2 {
-      margin: 32px 0 8px;
-      font-size: 1.25rem;
+      margin: 0 0 12px;
+      font-size: 1.45rem;
+      line-height: 1.2;
+    }
+
+    h3 {
+      margin: 0 0 6px;
+      font-size: 1.05rem;
     }
 
     p {
       margin: 0 0 16px;
     }
 
-    .updated {
-      color: #665f55;
-      margin-bottom: 32px;
+    ul, ol {
+      margin: 0;
+      padding-left: 22px;
+    }
+
+    li + li {
+      margin-top: 8px;
+    }
+
+    .intro {
+      max-width: 720px;
+      font-size: 1.18rem;
+      color: var(--muted);
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 650;
+    }
+
+    section {
+      padding: 28px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .manual {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .manual h2 {
+      position: sticky;
+      top: 16px;
+    }
+
+    footer {
+      padding: 28px 0 48px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 760px) {
+      header {
+        padding-top: 32px;
+      }
+
+      .grid, .manual {
+        grid-template-columns: 1fr;
+      }
+
+      .manual h2 {
+        position: static;
+      }
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
-        background: #1d1110;
-        color: #f6efe5;
-      }
-
-      .updated {
-        color: #cdbfab;
+        background: #111815;
+        color: #edf7f2;
+        --accent: #5ee0c8;
+        --accent-strong: #8ff1df;
+        --surface: #19231f;
+        --border: #2b4038;
+        --muted: #b2c5bd;
       }
     }
   </style>
 </head>
 <body>
+  <header>
+    <nav aria-label="Site navigation">
+      <a href="./">App &amp; Manual</a>
+      <a href="./privacy.html">Privacy Policy</a>
+    </nav>
+
+    <h1>Brass Pulse KFK</h1>
+    <p class="intro">
+      An iOS metronome for irregular measures, changing time signatures, custom
+      groupings, loops, and practical rehearsal work.
+    </p>
+    <div class="meta" aria-label="App summary">
+      <span class="pill">iPhone and iPad</span>
+      <span class="pill">Irregular meters</span>
+      <span class="pill">Local song library</span>
+      <span class="pill">No tracking</span>
+    </div>
+  </header>
+
   <main>
-    <h1>Brass Pulse KFK Privacy Policy</h1>
-    <p class="updated">Last updated: June 20, 2026</p>
+    <section aria-labelledby="overview">
+      <h2 id="overview">What It Does</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Build measure sequences</h3>
+          <p>
+            Create songs with changing time signatures, consecutive displayed
+            measure numbers, and per-measure grouping presets.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Practice with focus</h3>
+          <p>
+            Start playback from any measure, add an optional 4/4 count-in, and
+            loop a selected range while the active measure stays highlighted.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Keep your setup</h3>
+          <p>
+            Songs, tempo, loop settings, count-in choice, and measure sequences
+            are saved locally on your device.
+          </p>
+        </article>
+      </div>
+    </section>
 
-    <p>
-      Brass Pulse KFK does not collect, transmit, sell, or share personal data.
-      The app does not use third-party analytics, advertising, or tracking.
-    </p>
+    <section class="manual" aria-labelledby="manual">
+      <h2 id="manual">Manual</h2>
+      <div>
+        <h3>Play and stop</h3>
+        <ol>
+          <li>Use the play button to start the current song from the selected measure.</li>
+          <li>Tap a measure card to begin playback from that measure.</li>
+          <li>Use pause to stop playback and clear the active playback highlight.</li>
+        </ol>
 
-    <h2>Data Stored on Your Device</h2>
-    <p>
-      The app may save settings and metronome preferences locally on your device
-      so the app can restore your setup the next time you open it. This
-      information stays on your device and is not sent to the developer.
-    </p>
+        <h3>Set tempo</h3>
+        <ol>
+          <li>Move the BPM slider for direct tempo changes.</li>
+          <li>Tap the tempo button repeatedly to calculate a tap tempo.</li>
+          <li>Changing BPM during playback stops the current run so the next start uses the new tempo cleanly.</li>
+        </ol>
 
-    <h2>Network Access</h2>
-    <p>
-      Brass Pulse KFK does not require an account and does not send app usage
-      data to a server.
-    </p>
+        <h3>Edit songs and measures</h3>
+        <ol>
+          <li>Create, duplicate, rename, delete, or select songs from the song controls.</li>
+          <li>Set the first displayed measure number; later measures number themselves consecutively.</li>
+          <li>Insert a measure at a sequence boundary, adjust its numerator and denominator, then choose a grouping such as <strong>2+2+3</strong> for 7/8.</li>
+          <li>Delete a measure when the song has more than one measure.</li>
+        </ol>
 
-    <h2>Contact</h2>
-    <p>
-      For privacy questions, contact the developer through the GitHub repository
-      for this app.
-    </p>
+        <h3>Use loops</h3>
+        <ol>
+          <li>Enable the loop range control.</li>
+          <li>Choose inclusive start and end measure numbers.</li>
+          <li>Playback wraps inside that range and shows the current loop count.</li>
+        </ol>
+
+        <h3>Built-in songs</h3>
+        <p>
+          Built-in material can be played immediately. Tempo, count-in, and loop
+          settings remain adjustable. Composition edits are locked unless you
+          duplicate the song or temporarily unlock an edit control with a long press.
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="support">
+      <h2 id="support">Information and Support</h2>
+      <p>
+        Brass Pulse KFK is developed by Pieter Lambers. For questions, issues,
+        or release notes, use the GitHub repository:
+        <a href="https://github.com/pieterlambers/irregular-measure-metronome">irregular-measure-metronome</a>.
+      </p>
+      <p>
+        The app does not collect personal data. Read the
+        <a href="./privacy.html">privacy policy</a> for the full statement.
+      </p>
+    </section>
   </main>
+
+  <footer>
+    <p>Last updated: June 20, 2026</p>
+  </footer>
 </body>
 </html>
