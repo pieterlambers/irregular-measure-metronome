@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Brass Pulse KFK</title>
+  <title>Brass Pulse KFK Manual</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -14,12 +14,23 @@
       --accent: #087c68;
       --accent-strong: #045c4d;
       --surface: #ffffff;
+      --surface-soft: #eef5f1;
       --border: #d8e3de;
       --muted: #53615b;
+      --app-bg: #1e0000;
+      --app-surface: #212326;
+      --app-border: #6c0202;
+      --app-accent: #ffdf78;
+      --app-red: #a01007;
+      --app-cream: #f7f4ea;
     }
 
     * {
       box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
     }
 
     body {
@@ -27,19 +38,19 @@
     }
 
     header, main, footer {
-      width: min(100% - 32px, 980px);
+      width: min(100% - 32px, 1120px);
       margin: 0 auto;
     }
 
     header {
-      padding: 48px 0 24px;
+      padding: 40px 0 24px;
     }
 
     nav {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 40px;
+      gap: 10px;
+      margin-bottom: 34px;
     }
 
     a {
@@ -49,7 +60,7 @@
       text-underline-offset: 0.18em;
     }
 
-    nav a {
+    nav a, .toc a {
       display: inline-flex;
       align-items: center;
       min-height: 40px;
@@ -61,22 +72,27 @@
     }
 
     h1 {
-      max-width: 760px;
+      max-width: 840px;
       margin: 0 0 12px;
-      font-size: clamp(2.35rem, 6vw, 4.5rem);
+      font-size: clamp(2.4rem, 6vw, 4.6rem);
       line-height: 1;
       letter-spacing: 0;
     }
 
     h2 {
-      margin: 0 0 12px;
-      font-size: 1.45rem;
+      margin: 0 0 14px;
+      font-size: 1.5rem;
       line-height: 1.2;
     }
 
     h3 {
+      margin: 0 0 8px;
+      font-size: 1.08rem;
+    }
+
+    h4 {
       margin: 0 0 6px;
-      font-size: 1.05rem;
+      font-size: 0.98rem;
     }
 
     p {
@@ -92,13 +108,32 @@
       margin-top: 8px;
     }
 
+    code {
+      padding: 0.08em 0.28em;
+      border-radius: 5px;
+      background: var(--surface-soft);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.94em;
+    }
+
+    section {
+      padding: 34px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    footer {
+      padding: 28px 0 48px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+
     .intro {
-      max-width: 720px;
+      max-width: 760px;
       font-size: 1.18rem;
       color: var(--muted);
     }
 
-    .meta {
+    .meta, .toc {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
@@ -118,15 +153,21 @@
       font-weight: 650;
     }
 
-    section {
-      padding: 28px 0;
-      border-top: 1px solid var(--border);
-    }
-
     .grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
+    }
+
+    .two-column {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.82fr);
+      gap: 28px;
+      align-items: start;
+    }
+
+    .manual-block + .manual-block {
+      margin-top: 26px;
     }
 
     .card {
@@ -136,35 +177,589 @@
       background: var(--surface);
     }
 
-    .manual {
+    .note {
+      margin-top: 14px;
+      padding: 14px;
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      background: var(--surface-soft);
+      color: var(--muted);
+    }
+
+    .quick-table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .quick-table th, .quick-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .quick-table tr:last-child th,
+    .quick-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .quick-table th {
+      width: 30%;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    figure {
+      margin: 0;
+    }
+
+    figure + figure {
+      margin-top: 18px;
+    }
+
+    figcaption {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .screenshot-grid {
       display: grid;
-      grid-template-columns: 220px minmax(0, 1fr);
+      grid-template-columns: minmax(260px, 0.55fr) minmax(320px, 1fr);
       gap: 20px;
       align-items: start;
     }
 
-    .manual h2 {
-      position: sticky;
-      top: 16px;
+    .screenshot-frame {
+      overflow: hidden;
+      margin: 0 auto;
+      padding: 10px;
+      border: 1px solid #202020;
+      border-radius: 26px;
+      background: #050505;
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
     }
 
-    footer {
-      padding: 28px 0 48px;
-      color: var(--muted);
-      border-top: 1px solid var(--border);
+    .phone-shot {
+      max-width: 390px;
     }
 
-    @media (max-width: 760px) {
+    .tablet-shot {
+      max-width: 720px;
+      border-radius: 18px;
+    }
+
+    .device-shot {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 18px;
+    }
+
+    .phone {
+      max-width: 390px;
+      margin: 0 auto;
+      padding: 12px;
+      border: 1px solid #202020;
+      border-radius: 30px;
+      background: #050505;
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
+    }
+
+    .screen {
+      min-height: 560px;
+      overflow: hidden;
+      border-radius: 22px;
+      background:
+        linear-gradient(180deg, rgba(160, 16, 7, 0.52), rgba(30, 0, 0, 0) 18%),
+        var(--app-bg);
+      color: var(--app-cream);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .screen-pad {
+      padding: 18px 18px 20px;
+    }
+
+    .app-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .app-top span:last-child {
+      margin-left: auto;
+      padding: 5px 9px;
+      border: 1px solid rgba(255, 223, 120, 0.38);
+      border-radius: 999px;
+      background: var(--app-red);
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .kfk {
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--app-accent);
+      color: var(--app-bg);
+      font-size: 0.66rem;
+    }
+
+    .song-row, .control-row, .mini-toolbar, .loop-card, .measure-card, .song-list {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .song-field, .app-button, .loop-card, .measure-card, .song-list, .settings-card {
+      border: 1px solid var(--app-border);
+      border-radius: 10px;
+      background: var(--app-surface);
+    }
+
+    .icon-button, .app-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      height: 34px;
+      color: var(--app-accent);
+      font-weight: 800;
+    }
+
+    .song-field {
+      flex: 1;
+      height: 36px;
+      padding: 8px 10px;
+      color: #ffffff;
+      font-size: 0.9rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .song-row .icon-button.song-field {
+      flex: 0 0 38px;
+      padding: 0;
+      font-size: 0.72rem;
+    }
+
+    .tempo-big {
+      display: flex;
+      align-items: end;
+      gap: 8px;
+      margin: 14px 0 4px;
+    }
+
+    .tempo-big strong {
+      color: #ffffff;
+      font-size: 4rem;
+      font-weight: 300;
+      line-height: 0.92;
+    }
+
+    .tempo-big span {
+      padding-bottom: 10px;
+      color: #c7bda8;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+    }
+
+    .tempo-name {
+      color: var(--app-accent);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 0.8rem;
+    }
+
+    .slider {
+      position: relative;
+      height: 4px;
+      margin: 18px 0 6px;
+      border-radius: 999px;
+      background: #4a1a12;
+    }
+
+    .slider::after {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 42%;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--app-accent);
+      content: "";
+    }
+
+    .slider::before {
+      position: absolute;
+      left: 40%;
+      top: -6px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--app-accent);
+      content: "";
+      z-index: 1;
+    }
+
+    .beat-dots {
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      margin: 18px 0;
+    }
+
+    .dot {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--app-border);
+      border-radius: 50%;
+      background: var(--app-surface);
+    }
+
+    .dot.active {
+      border-color: #ffffff;
+      background: #ffffff;
+    }
+
+    .dot.sub {
+      border-color: rgba(255, 223, 120, 0.7);
+    }
+
+    .play {
+      flex: 1;
+      height: 56px;
+      border-radius: 15px;
+      background: var(--app-accent);
+      color: var(--app-bg);
+      font-size: 1.6rem;
+    }
+
+    .tap {
+      width: 92px;
+      height: 56px;
+      flex-direction: column;
+      color: #ffffff;
+      font-size: 0.95rem;
+    }
+
+    .tap small, .label {
+      color: #c7bda8;
+      font-size: 0.64rem;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .toggle {
+      justify-content: space-between;
+      width: 100%;
+      padding: 10px 12px;
+      color: #c7bda8;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .switch {
+      width: 38px;
+      height: 22px;
+      padding: 3px;
+      border-radius: 999px;
+      background: #5f4a29;
+    }
+
+    .switch::after {
+      display: block;
+      width: 16px;
+      height: 16px;
+      margin-left: 16px;
+      border-radius: 50%;
+      background: var(--app-accent);
+      content: "";
+    }
+
+    .sequence-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 14px 0 8px;
+      color: #c7bda8;
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .sequence-title strong {
+      color: var(--app-accent);
+    }
+
+    .mini-toolbar {
+      justify-content: flex-end;
+      margin-left: auto;
+    }
+
+    .settings-card {
+      margin-bottom: 9px;
+      padding: 10px;
+    }
+
+    .settings-card div {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: #ffffff;
+      font-size: 0.82rem;
+    }
+
+    .loop-card {
+      display: block;
+      padding: 10px;
+    }
+
+    .loop-card .row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      gap: 8px;
+    }
+
+    .counter {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid var(--app-border);
+      border-radius: 9px;
+      background: var(--app-bg);
+      color: #ffffff;
+      font-size: 0.8rem;
+    }
+
+    .insert {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .insert::before, .insert::after {
+      flex: 1;
+      height: 1px;
+      background: var(--app-border);
+      content: "";
+    }
+
+    .insert span {
+      display: inline-flex;
+      width: 24px;
+      height: 24px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--app-border);
+      border-radius: 50%;
+      color: var(--app-accent);
+    }
+
+    .measure-card {
+      position: relative;
+      display: block;
+      padding: 10px 10px 11px;
+    }
+
+    .measure-card.active {
+      border-width: 2px;
+      border-color: var(--app-accent);
+      background: #332a19;
+    }
+
+    .measure-card.loop::before,
+    .measure-card.active::before {
+      position: absolute;
+      left: 0;
+      top: 10px;
+      bottom: 10px;
+      width: 3px;
+      border-radius: 999px;
+      background: var(--app-accent);
+      content: "";
+    }
+
+    .measure-head {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+
+    .measure-no {
+      width: 38px;
+      color: #c7bda8;
+      font-size: 0.72rem;
+    }
+
+    .signature {
+      min-width: 90px;
+      color: #ffffff;
+      font-size: 1.45rem;
+      font-weight: 700;
+    }
+
+    .grouping {
+      min-width: 74px;
+      padding: 8px 7px;
+      border: 1px solid var(--app-border);
+      border-radius: 9px;
+      background: var(--app-bg);
+      color: var(--app-accent);
+      font-size: 0.75rem;
+      text-align: center;
+    }
+
+    .x {
+      margin-left: auto;
+      color: #c7bda8;
+    }
+
+    .mini-dots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .mini-dots span {
+      width: 10px;
+      height: 10px;
+      border: 1px solid var(--app-border);
+      border-radius: 50%;
+      background: var(--app-surface);
+    }
+
+    .mini-dots span.sub {
+      border-color: rgba(255, 223, 120, 0.7);
+    }
+
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 6px 0 10px 45px;
+    }
+
+    .preset-row span {
+      padding: 6px 8px;
+      border: 1px solid var(--app-border);
+      border-radius: 8px;
+      background: var(--app-bg);
+      color: #c7bda8;
+      font-size: 0.68rem;
+    }
+
+    .preset-row .selected {
+      border-color: rgba(255, 223, 120, 0.55);
+      background: rgba(255, 223, 120, 0.1);
+      color: var(--app-accent);
+    }
+
+    .song-list {
+      display: block;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .song-list div {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      min-height: 34px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--app-border);
+      color: #ffffff;
+      font-size: 0.74rem;
+    }
+
+    .song-list div:last-child {
+      border-bottom: 0;
+    }
+
+    .song-list .lock {
+      margin-left: auto;
+      color: #c7bda8;
+    }
+
+    .compact-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .compact-bar .play {
+      flex: 0 0 46px;
+      height: 42px;
+      border-radius: 10px;
+      font-size: 1rem;
+    }
+
+    .compact-bar strong {
+      color: #ffffff;
+      font-size: 0.92rem;
+    }
+
+    .compact-bar .app-button {
+      min-width: 58px;
+    }
+
+    .push {
+      margin-left: auto;
+    }
+
+    @media (max-width: 860px) {
       header {
         padding-top: 32px;
       }
 
-      .grid, .manual {
+      .grid, .two-column, .screenshot-grid {
         grid-template-columns: 1fr;
       }
 
-      .manual h2 {
-        position: static;
+      .quick-table th {
+        width: 38%;
+      }
+    }
+
+    @media (max-width: 520px) {
+      header, main, footer {
+        width: min(100% - 22px, 1120px);
+      }
+
+      h1 {
+        font-size: 2.35rem;
+      }
+
+      section {
+        padding: 28px 0;
+      }
+
+      .quick-table, .quick-table tbody, .quick-table tr, .quick-table th, .quick-table td {
+        display: block;
+        width: 100%;
+      }
+
+      .quick-table th {
+        padding-bottom: 4px;
+        border-bottom: 0;
+      }
+
+      .quick-table td {
+        padding-top: 0;
       }
     }
 
@@ -175,6 +770,7 @@
         --accent: #5ee0c8;
         --accent-strong: #8ff1df;
         --surface: #19231f;
+        --surface-soft: #14201b;
         --border: #2b4038;
         --muted: #b2c5bd;
       }
@@ -184,89 +780,346 @@
 <body>
   <header>
     <nav aria-label="Site navigation">
-      <a href="./">App &amp; Manual</a>
+      <a href="./">Manual</a>
       <a href="./privacy.html">Privacy Policy</a>
+      <a href="https://github.com/pieterlambers/irregular-measure-metronome">GitHub</a>
     </nav>
 
-    <h1>Brass Pulse KFK</h1>
+    <h1>Brass Pulse KFK Manual</h1>
     <p class="intro">
-      An iOS metronome for irregular measures, changing time signatures, custom
-      groupings, loops, and practical rehearsal work.
+      A practical guide to using the iOS metronome for irregular measures,
+      changing time signatures, custom beat groupings, loops, count-ins, and
+      rehearsal-ready song libraries.
     </p>
     <div class="meta" aria-label="App summary">
       <span class="pill">iPhone and iPad</span>
-      <span class="pill">Irregular meters</span>
-      <span class="pill">Local song library</span>
-      <span class="pill">No tracking</span>
+      <span class="pill">20-300 BPM</span>
+      <span class="pill">Custom measure sequences</span>
+      <span class="pill">Local storage only</span>
+    </div>
+    <div class="toc" aria-label="Manual sections">
+      <a href="#quick-start">Quick Start</a>
+      <a href="#screenshots">Screenshots</a>
+      <a href="#playback">Playback</a>
+      <a href="#songs">Songs</a>
+      <a href="#measures">Measures</a>
+      <a href="#loops">Loops</a>
+      <a href="#troubleshooting">Troubleshooting</a>
     </div>
   </header>
 
   <main>
     <section aria-labelledby="overview">
-      <h2 id="overview">What It Does</h2>
+      <h2 id="overview">What Brass Pulse KFK Does</h2>
       <div class="grid">
         <article class="card">
-          <h3>Build measure sequences</h3>
+          <h3>Build irregular forms</h3>
           <p>
-            Create songs with changing time signatures, consecutive displayed
-            measure numbers, and per-measure grouping presets.
+            Create a sequence of measures with different time signatures, display
+            real rehearsal measure numbers, and add beat groupings such as
+            <strong>2+2+3</strong> in 7/8.
           </p>
         </article>
         <article class="card">
-          <h3>Practice with focus</h3>
+          <h3>Practice exact passages</h3>
           <p>
-            Start playback from any measure, add an optional 4/4 count-in, and
-            loop a selected range while the active measure stays highlighted.
+            Start from any measure, add an optional 4/4 count-in, loop a selected
+            range, and follow the highlighted measure as playback advances.
           </p>
         </article>
         <article class="card">
           <h3>Keep your setup</h3>
           <p>
-            Songs, tempo, loop settings, count-in choice, and measure sequences
-            are saved locally on your device.
+            Songs, tempo, first measure number, loop range, count-in preference,
+            and measure sequences are saved locally on your device.
           </p>
         </article>
       </div>
     </section>
 
-    <section class="manual" aria-labelledby="manual">
-      <h2 id="manual">Manual</h2>
-      <div>
-        <h3>Play and stop</h3>
-        <ol>
-          <li>Use the play button to start the current song from the selected measure.</li>
-          <li>Tap a measure card to begin playback from that measure.</li>
-          <li>Use pause to stop playback and clear the active playback highlight.</li>
-        </ol>
+    <section id="quick-start" aria-labelledby="quick-start-heading">
+      <h2 id="quick-start-heading">Quick Start</h2>
+      <table class="quick-table">
+        <tbody>
+          <tr>
+            <th scope="row">Start practicing</th>
+            <td>Tap the play button. To begin elsewhere, tap the measure card where you want playback to start.</td>
+          </tr>
+          <tr>
+            <th scope="row">Change tempo</th>
+            <td>Move the BPM slider, or tap the <strong>TAP TEMPO</strong> button several times at the desired pulse.</td>
+          </tr>
+          <tr>
+            <th scope="row">Add a count-in</th>
+            <td>Turn on <strong>count-in 4/4</strong>. Playback starts with four count-in beats before the selected measure.</td>
+          </tr>
+          <tr>
+            <th scope="row">Edit a measure</th>
+            <td>Drag up or down on the numerator or denominator wheel, then choose a grouping preset if needed.</td>
+          </tr>
+          <tr>
+            <th scope="row">Loop a passage</th>
+            <td>Enable <strong>loop range</strong>, set the <strong>from</strong> and <strong>to</strong> measure numbers, then press play.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
-        <h3>Set tempo</h3>
-        <ol>
-          <li>Move the BPM slider for direct tempo changes.</li>
-          <li>Tap the tempo button repeatedly to calculate a tap tempo.</li>
-          <li>Changing BPM during playback stops the current run so the next start uses the new tempo cleanly.</li>
-        </ol>
+    <section id="screenshots" aria-labelledby="screenshots-heading">
+      <h2 id="screenshots-heading">Screenshots</h2>
+      <p>
+        These screenshots show the app on compact and wide layouts.
+      </p>
+      <div class="screenshot-grid">
+        <figure>
+          <div class="screenshot-frame phone-shot">
+            <img
+              class="device-shot"
+              src="./screenshots/main-practice.png"
+              alt="Brass Pulse KFK screenshot showing song controls, tempo, beat dots, playback controls, count-in, loop count, and measure cards."
+              width="945"
+              height="2048"
+            >
+          </div>
+          <figcaption>Compact layout with transport controls and measure cards.</figcaption>
+        </figure>
 
-        <h3>Edit songs and measures</h3>
-        <ol>
-          <li>Create, duplicate, rename, delete, or select songs from the song controls.</li>
-          <li>Set the first displayed measure number; later measures number themselves consecutively.</li>
-          <li>Insert a measure at a sequence boundary, adjust its numerator and denominator, then choose a grouping such as <strong>2+2+3</strong> for 7/8.</li>
-          <li>Delete a measure when the song has more than one measure.</li>
-        </ol>
+        <figure>
+          <div class="screenshot-frame tablet-shot">
+            <img
+              class="device-shot"
+              src="./screenshots/ipad-split-layout.png"
+              alt="Brass Pulse KFK screenshot showing the split layout with transport controls on the left and sequence editing controls on the right."
+              width="1320"
+              height="1818"
+              loading="lazy"
+            >
+          </div>
+          <figcaption>Wide layout with the transport on the left and sequence editing on the right.</figcaption>
+        </figure>
+      </div>
+    </section>
 
-        <h3>Use loops</h3>
-        <ol>
-          <li>Enable the loop range control.</li>
-          <li>Choose inclusive start and end measure numbers.</li>
-          <li>Playback wraps inside that range and shows the current loop count.</li>
-        </ol>
+    <section id="playback" aria-labelledby="playback-heading">
+      <div class="two-column">
+        <div>
+          <h2 id="playback-heading">Playback and Tempo</h2>
+          <div class="manual-block">
+            <h3>Play, pause, and start from a measure</h3>
+            <ol>
+              <li>Tap <strong>play</strong> to start the current song.</li>
+              <li>Tap <strong>pause</strong> to stop playback and clear the active beat highlight.</li>
+              <li>Tap any measure card to start from that measure. If loop range is enabled and you tap after the loop end, loop range turns off so playback can start where you tapped.</li>
+            </ol>
+          </div>
+          <div class="manual-block">
+            <h3>Set BPM</h3>
+            <ol>
+              <li>Use the slider for direct tempo changes from <strong>20</strong> to <strong>300</strong> BPM.</li>
+              <li>Tap <strong>TAP TEMPO</strong> at least twice to calculate BPM from your taps. The app averages recent taps and clamps the result to the supported tempo range.</li>
+              <li>If you change BPM while playing, playback stops so the next start uses the new tempo cleanly.</li>
+            </ol>
+          </div>
+          <div class="manual-block">
+            <h3>Use the 4/4 count-in</h3>
+            <ol>
+              <li>Enable <strong>count-in 4/4</strong>.</li>
+              <li>Press play or tap a measure.</li>
+              <li>The app plays four count-in beats before the selected measure, then continues into the sequence or loop.</li>
+            </ol>
+          </div>
+        </div>
+        <figure>
+          <div class="screenshot-frame phone-shot">
+            <img
+              class="device-shot"
+              src="./screenshots/main-practice.png"
+              alt="Brass Pulse KFK screenshot showing the play button, tap tempo button, count-in toggle, loop count, and sequence measures."
+              width="945"
+              height="2048"
+              loading="lazy"
+            >
+          </div>
+          <figcaption>The real iPhone layout keeps playback controls above the editable measure sequence.</figcaption>
+        </figure>
+      </div>
+    </section>
 
-        <h3>Built-in songs</h3>
-        <p>
-          Built-in material can be played immediately. Tempo, count-in, and loop
-          settings remain adjustable. Composition edits are locked unless you
-          duplicate the song or temporarily unlock an edit control with a long press.
-        </p>
+    <section id="songs" aria-labelledby="songs-heading">
+      <h2 id="songs-heading">Songs and Built-In Material</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Select a song</h3>
+          <p>
+            Tap the song list button, then choose a song from the list. The
+            checked row is the current song. Locked rows are built-in songs.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Create or duplicate</h3>
+          <p>
+            Use <strong>+</strong> for a fresh song. Use duplicate to make an
+            editable copy of the current song, which is the easiest way to adapt
+            a built-in sequence for rehearsal.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Rename, reset, or delete</h3>
+          <p>
+            Editable songs can be renamed directly in the song name field. Built-in
+            songs can be reset to their original content. Delete removes the
+            current song when at least one other song remains.
+          </p>
+        </article>
+      </div>
+      <p class="note">
+        Built-in songs protect their composition edits. You can still change
+        tempo, count-in, and loop settings. To edit measures permanently,
+        duplicate the song. You can also long-press an edit control to temporarily
+        unlock a built-in song for a short adjustment window.
+      </p>
+    </section>
+
+    <section id="measures" aria-labelledby="measures-heading">
+      <div class="two-column">
+        <div>
+          <h2 id="measures-heading">Measures, Time Signatures, and Groupings</h2>
+          <div class="manual-block">
+            <h3>Set displayed measure numbers</h3>
+            <ol>
+              <li>Open sequence settings if you are on the compact phone layout.</li>
+              <li>Set <strong>first measure</strong> to the number printed in your score.</li>
+              <li>Every later measure is numbered consecutively from that starting value.</li>
+            </ol>
+          </div>
+          <div class="manual-block">
+            <h3>Insert and delete measures</h3>
+            <ol>
+              <li>Tap a circular <strong>+</strong> between cards to insert a copy of the neighboring measure at that position.</li>
+              <li>Tap <strong>x</strong> on a measure card to delete it.</li>
+              <li>The app keeps at least one measure in the song.</li>
+            </ol>
+          </div>
+          <div class="manual-block">
+            <h3>Edit time signatures</h3>
+            <ol>
+              <li>Drag up or down on the numerator wheel to change beats per measure.</li>
+              <li>Drag up or down on the denominator wheel to change the beat unit.</li>
+              <li>Common numerator options are 1-12, with current custom values preserved. Common denominators are 2, 4, 8, and 16.</li>
+            </ol>
+          </div>
+          <div class="manual-block">
+            <h3>Choose beat groupings</h3>
+            <ol>
+              <li>Tap the grouping button on a measure card.</li>
+              <li>Choose <strong>None</strong> or one of the valid presets for the numerator.</li>
+              <li>Grouping affects subaccent display and click emphasis inside the measure.</li>
+            </ol>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Grouping Examples</h3>
+          <ul>
+            <li><strong>5/8:</strong> 2+3 or 3+2</li>
+            <li><strong>7/8:</strong> 2+2+3, 2+3+2, or 3+2+2</li>
+            <li><strong>8/8:</strong> 3+3+2, 3+2+3, or 2+3+3</li>
+            <li><strong>9/8:</strong> 2+2+2+3 variants or 3+3+3</li>
+            <li><strong>12/8:</strong> 3+3+3+3, 2+2+2+2+2+2, or 4+4+4</li>
+          </ul>
+          <p class="note">
+            A grouping is valid only when its parts add up to the numerator.
+            If you change a time signature and the old grouping no longer fits,
+            the app clears that grouping.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="loops" aria-labelledby="loops-heading">
+      <h2 id="loops-heading">Loop Practice</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Enable a range</h3>
+          <p>
+            Turn on <strong>loop range</strong>. The selected cards gain a subtle
+            left marker, with repeat icons at the start and end boundaries.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Set boundaries</h3>
+          <p>
+            Use <strong>from</strong> and <strong>to</strong> steppers. The start
+            cannot move past the end, and the end cannot move before the start.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Follow repetitions</h3>
+          <p>
+            Playback wraps inside the inclusive range. The loop count indicator
+            increments as the passage repeats.
+          </p>
+        </article>
+      </div>
+      <p class="note">
+        Changing the count-in or loop range during playback restarts playback at
+        the active loop start so you hear the newly selected practice range
+        predictably.
+      </p>
+    </section>
+
+    <section id="layout" aria-labelledby="layout-heading">
+      <h2 id="layout-heading">Layout Tips</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Compact phones</h3>
+          <p>
+            Use the sequence settings button to show or hide first-measure and
+            loop controls. Use the focus button to hide the larger transport and
+            show more measure cards.
+          </p>
+        </article>
+        <article class="card">
+          <h3>iPad and wide screens</h3>
+          <p>
+            The app switches to a split layout with transport controls on the
+            left and the editable sequence on the right.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Accessibility</h3>
+          <p>
+            Buttons and editors include accessibility labels. Time signature
+            wheels support adjustable actions for increment and decrement.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="troubleshooting" aria-labelledby="troubleshooting-heading">
+      <h2 id="troubleshooting-heading">Troubleshooting</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>I cannot edit a measure</h3>
+          <p>
+            You are probably viewing a locked built-in song. Duplicate it for an
+            editable copy, or long-press the specific edit control for a temporary
+            unlock.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Playback stopped after a change</h3>
+          <p>
+            Tempo, measure, and grouping edits stop the current run intentionally
+            so the next playback begins with a clean schedule.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Tap tempo returned to TAP</h3>
+          <p>
+            The tap tempo readout resets after a short pause. Tap again at least
+            twice to calculate a new BPM.
+          </p>
+        </article>
       </div>
     </section>
 
